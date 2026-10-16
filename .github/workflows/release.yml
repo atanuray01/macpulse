@@ -1,0 +1,39 @@
+name: Release Build
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build-release:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Build Universal Binary
+        run: |
+          mkdir -p bin dist
+          clang -O3 \
+            -framework CoreFoundation \
+            -framework Foundation \
+            -framework IOKit \
+            -Isrc \
+            src/theme.c src/telemetry.m src/ui.c src/main.m \
+            -o bin/macpulse
+          chmod +x bin/macpulse
+          make release
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            macpulse-*.tar.gz
+            bin/macpulse
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

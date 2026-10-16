@@ -6,6 +6,7 @@
 #include <termios.h>
 #include <signal.h>
 #include <poll.h>
+#include <sys/stat.h>
 #include <sys/time.h>
 #include "telemetry.h"
 #include "theme.h"
@@ -51,11 +52,76 @@ static void cleanup_and_exit(int code) {
     exit(code);
 }
 
+static void save_user_config(const char *theme_name, int refresh_ms) {
+    const char *home = getenv("HOME");
+    if (!home) return;
+    char dir[512], file[512];
+    snprintf(dir, sizeof(dir), "%s/.config/macpulse", home);
+    snprintf(file, sizeof(file), "%s/.config/macpulse/config.json", home);
+    mkdir(dir, 0755);
+
+    FILE *f = fopen(file, "w");
+    if (!f) return;
+    fprintf(f, "{\n  \"theme\": \"%s\",\n  \"refresh_rate_seconds\": %.2f\n}\n",
+            theme_name, (float)refresh_ms / 1000.0f);
+    fclose(f);
+}
+
+static void load_user_config(char *theme_out, size_t theme_sz, int *refresh_ms_out) {
+    const char *home = getenv("HOME");
+    if (!home) return;
+    char file[512];
+    snprintf(file, sizeof(file), "%s/.config/macpulse/config.json", home);
+
+    FILE *f = fopen(file, "r");
+    if (!f) return;
+    fseek(f, 0, SEEK_END);
+    long sz = ftell(f);
+    fseek(f, 0, SEEK_SET);
+    if (sz <= 0 || sz > 8192) { fclose(f); return; }
+
+    char *buf = malloc(sz + 1);
+    if (!buf) { fclose(f); return; }
+    fread(buf, 1, sz, f);
+    buf[sz] = '\0';
+    fclose(f);
+
+    const char *t_pos = strstr(buf, "\"theme\"");
+    if (t_pos) {
+        t_pos = strchr(t_pos, ':');
+        if (t_pos) {
+            t_pos = strchr(t_pos, '\"');
+            if (t_pos) {
+                t_pos++;
+                const char *end = strchr(t_pos, '\"');
+                if (end) {
+                    size_t len = end - t_pos;
+                    if (len >= theme_sz) len = theme_sz - 1;
+                    strncpy(theme_out, t_pos, len);
+                    theme_out[len] = '\0';
+                }
+            }
+        }
+    }
+
+    const char *r_pos = strstr(buf, "\"refresh_rate_seconds\"");
+    if (r_pos) {
+        r_pos = strchr(r_pos, ':');
+        if (r_pos) {
+            float r = atof(r_pos + 1);
+            if (r >= 0.2f && r <= 10.0f) {
+                *refresh_ms_out = (int)(r * 1000.0f);
+            }
+        }
+    }
+    free(buf);
+}
+
 static void print_usage(const char *prog) {
     printf("MacPulse - Modern Apple Silicon System Monitor & Dashboard for Terminal\n\n");
     printf("Usage: %s [OPTIONS]\n\n", prog);
     printf("Options:\n");
-    printf("  -t, --theme <name>     Select color theme on launch (e.g. cyberpunk, dracula, nord)\n");
+    printf("  -t, --theme <name>     Select color theme on launch (e.g. matrix, cyberpunk, dracula, nord)\n");
     printf("  -r, --rate <seconds>   Set refresh rate in seconds (default: 1.0, min: 0.2)\n");
     printf("  -l, --list-themes      List all available built-in and custom themes\n");
     printf("  -h, --help             Show this help message\n");
@@ -67,7 +133,7 @@ static void print_usage(const char *prog) {
     printf("  c / m / p / n          Sort processes by CPU%% / Memory / PID / Name\n");
     printf("  r                      Reverse sort order\n");
     printf("  /                      Search / filter processes by name or user\n");
-    printf("  k                      Kill (SIGTERM) highlighted process\n");
+    printf("  x                      Kill (SIGTERM) highlighted process\n");
     printf("  + / -                  Speed up / slow down refresh rate\n");
     printf("  h / ?                  Toggle Help modal\n");
 }
@@ -77,6 +143,12 @@ int main(int argc, char *argv[]) {
     theme_load_user_themes();
 
     int refresh_ms = 1000;
+    char saved_theme[64] = "";
+    load_user_config(saved_theme, sizeof(saved_theme), &refresh_ms);
+    if (saved_theme[0]) {
+        theme_set_by_name(saved_theme);
+    }
+
     const char *initial_theme = NULL;
 
     for (int i = 1; i < argc; i++) {
@@ -204,6 +276,7 @@ int main(int argc, char *argv[]) {
                 } else if (state.modal == MODAL_THEME) {
                     if (ch == '\n' || ch == '\r') {
                         theme_set_by_index(state.theme_cursor);
+                        save_user_config(theme_current()->name, state.refresh_ms);
                         state.modal = MODAL_NONE;
                     } else if (ch == 'q' || ch == 't') {
                         state.modal = MODAL_NONE;
@@ -256,6 +329,7 @@ int main(int argc, char *argv[]) {
                             break;
                         case 'T':
                             theme_cycle_next();
+                            save_user_config(theme_current()->name, state.refresh_ms);
                             break;
                         case 'c':
                         case 'C':
@@ -309,10 +383,12 @@ int main(int argc, char *argv[]) {
                         case '+':
                         case '=':
                             if (state.refresh_ms > 250) state.refresh_ms -= 250;
+                            save_user_config(theme_current()->name, state.refresh_ms);
                             break;
                         case '-':
                         case '_':
                             if (state.refresh_ms < 5000) state.refresh_ms += 250;
+                            save_user_config(theme_current()->name, state.refresh_ms);
                             break;
                         case 'j': {
                             const SystemTelemetry *t_ptr = telemetry_get();
