@@ -1,0 +1,21 @@
+{
+  "name": "Monokai Pro",
+  "desc": "High-energy magenta, acid yellow, and bright mint",
+  "border": "#ff6188",
+  "header_bg": "#2d2a2e",
+  "header_fg": "#ffd866",
+  "title": "#a9dc76",
+  "accent": "#78dce8",
+  "accent2": "#fc9867",
+  "cpu_color": "#78dce8",
+  "gpu_color": "#ff6188",
+  "mem_color": "#ffd866",
+  "net_down": "#a9dc76",
+  "net_up": "#fc9867",
+  "text": "#fcfcfa",
+  "dim": "#727072",
+  "warn": "#ffd866",
+  "crit": "#ff6188",
+  "proc_sel_bg": "#403e41",
+  "proc_sel_fg": "#ffd866"
+}

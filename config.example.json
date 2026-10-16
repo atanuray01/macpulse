@@ -1,0 +1,26 @@
+{
+  "theme": "Cyberpunk 2077",
+  "refresh_rate_seconds": 1.0,
+  "sort_by": "cpu",
+  "reverse_sort": false,
+  "custom_theme_dir": "~/.config/macpulse/themes",
+  "theme_customization_guide": {
+    "border": "#ff007f",
+    "header_bg": "#260033",
+    "header_fg": "#00f0ff",
+    "title": "#ffe600",
+    "accent": "#00f0ff",
+    "accent2": "#ff007f",
+    "cpu_color": "#00f0ff",
+    "gpu_color": "#ff007f",
+    "mem_color": "#ffe600",
+    "net_down": "#00ff66",
+    "net_up": "#ff7700",
+    "text": "#ffffff",
+    "dim": "#707090",
+    "warn": "#ffe600",
+    "crit": "#ff003c",
+    "proc_sel_bg": "#3d005c",
+    "proc_sel_fg": "#00ffff"
+  }
+}

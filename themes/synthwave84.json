@@ -1,0 +1,21 @@
+{
+  "name": "Synthwave 84",
+  "desc": "Outrun aesthetic with magenta laser and radioactive cyan",
+  "border": "#ff007f",
+  "header_bg": "#20092c",
+  "header_fg": "#00fff7",
+  "title": "#fe4450",
+  "accent": "#00fff7",
+  "accent2": "#ff007f",
+  "cpu_color": "#00fff7",
+  "gpu_color": "#ff007f",
+  "mem_color": "#ffea00",
+  "net_down": "#72f1b8",
+  "net_up": "#ff8b39",
+  "text": "#fbfbfc",
+  "dim": "#614d85",
+  "warn": "#ffea00",
+  "crit": "#fe4450",
+  "proc_sel_bg": "#37174d",
+  "proc_sel_fg": "#00fff7"
+}

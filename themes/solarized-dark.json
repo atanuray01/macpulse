@@ -1,0 +1,21 @@
+{
+  "name": "Solarized Dark",
+  "desc": "Precision engineered scientific palette with teal and cyan",
+  "border": "#2aa198",
+  "header_bg": "#073642",
+  "header_fg": "#268bd2",
+  "title": "#2aa198",
+  "accent": "#268bd2",
+  "accent2": "#6c71c4",
+  "cpu_color": "#268bd2",
+  "gpu_color": "#6c71c4",
+  "mem_color": "#2aa198",
+  "net_down": "#859900",
+  "net_up": "#b58900",
+  "text": "#93a1a1",
+  "dim": "#586e75",
+  "warn": "#b58900",
+  "crit": "#dc322f",
+  "proc_sel_bg": "#073642",
+  "proc_sel_fg": "#eee8d5"
+}

@@ -1,0 +1,21 @@
+{
+  "name": "Nord Arctic",
+  "desc": "Arctic blue, aurora green and clean glacial tones",
+  "border": "#88c0d0",
+  "header_bg": "#2e3440",
+  "header_fg": "#8fbcbb",
+  "title": "#81a1c1",
+  "accent": "#88c0d0",
+  "accent2": "#b48ead",
+  "cpu_color": "#88c0d0",
+  "gpu_color": "#b48ead",
+  "mem_color": "#81a1c1",
+  "net_down": "#a3be8c",
+  "net_up": "#ebcb8b",
+  "text": "#eceff4",
+  "dim": "#4c566a",
+  "warn": "#ebcb8b",
+  "crit": "#bf616a",
+  "proc_sel_bg": "#3b4252",
+  "proc_sel_fg": "#eceff4"
+}

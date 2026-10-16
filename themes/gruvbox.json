@@ -1,0 +1,21 @@
+{
+  "name": "Gruvbox Dark",
+  "desc": "Warm retro groove with gold, aqua, and autumn orange",
+  "border": "#fabd2f",
+  "header_bg": "#282828",
+  "header_fg": "#8ec07c",
+  "title": "#fabd2f",
+  "accent": "#fe8019",
+  "accent2": "#b8bb26",
+  "cpu_color": "#8ec07c",
+  "gpu_color": "#d3869b",
+  "mem_color": "#fabd2f",
+  "net_down": "#b8bb26",
+  "net_up": "#fe8019",
+  "text": "#ebdbb2",
+  "dim": "#665c54",
+  "warn": "#fabd2f",
+  "crit": "#fb4934",
+  "proc_sel_bg": "#3c3836",
+  "proc_sel_fg": "#ebdbb2"
+}

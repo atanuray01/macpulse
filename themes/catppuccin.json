@@ -1,0 +1,21 @@
+{
+  "name": "Catppuccin Mocha",
+  "desc": "Warm soothing pastel palette with mauve, peach and teal",
+  "border": "#cba6f7",
+  "header_bg": "#1e1e2e",
+  "header_fg": "#94e2d5",
+  "title": "#fab387",
+  "accent": "#cba6f7",
+  "accent2": "#89b4fa",
+  "cpu_color": "#89b4fa",
+  "gpu_color": "#cba6f7",
+  "mem_color": "#94e2d5",
+  "net_down": "#a6e3a1",
+  "net_up": "#fab387",
+  "text": "#cdd6f4",
+  "dim": "#585b70",
+  "warn": "#f9e2af",
+  "crit": "#f38ba8",
+  "proc_sel_bg": "#313244",
+  "proc_sel_fg": "#cdd6f4"
+}

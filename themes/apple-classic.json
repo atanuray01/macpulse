@@ -1,0 +1,21 @@
+{
+  "name": "Apple Classic",
+  "desc": "Minimalist Cupertino styling with silver, blue and emerald",
+  "border": "#007aff",
+  "header_bg": "#1c1c1e",
+  "header_fg": "#ffffff",
+  "title": "#007aff",
+  "accent": "#007aff",
+  "accent2": "#5856d6",
+  "cpu_color": "#007aff",
+  "gpu_color": "#af52de",
+  "mem_color": "#34c759",
+  "net_down": "#30d158",
+  "net_up": "#ff9f0a",
+  "text": "#f2f2f7",
+  "dim": "#636366",
+  "warn": "#ff9f0a",
+  "crit": "#ff453a",
+  "proc_sel_bg": "#2c2c2e",
+  "proc_sel_fg": "#ffffff"
+}

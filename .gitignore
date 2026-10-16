@@ -1,0 +1,10 @@
+.DS_Store
+*.o
+*.dSYM
+bin/
+build/
+dist/
+*.tar.gz
+*.zip
+.vscode/
+.idea/

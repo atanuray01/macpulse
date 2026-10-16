@@ -1,0 +1,21 @@
+{
+  "name": "Sunset Horizon",
+  "desc": "Warm twilight gradient with flamingo pink and golden mango",
+  "border": "#ff5e62",
+  "header_bg": "#2b1123",
+  "header_fg": "#ff9966",
+  "title": "#ff5e62",
+  "accent": "#ff9966",
+  "accent2": "#d152a5",
+  "cpu_color": "#ff5e62",
+  "gpu_color": "#d152a5",
+  "mem_color": "#ff9966",
+  "net_down": "#ffd166",
+  "net_up": "#ef476f",
+  "text": "#ffe5ec",
+  "dim": "#7a4d65",
+  "warn": "#ffd166",
+  "crit": "#ef476f",
+  "proc_sel_bg": "#421d37",
+  "proc_sel_fg": "#ff9966"
+}

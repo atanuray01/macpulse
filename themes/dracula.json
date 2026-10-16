@@ -1,0 +1,21 @@
+{
+  "name": "Dracula Pro",
+  "desc": "Iconic gothic dark theme with vibrant pastels",
+  "border": "#bd93f9",
+  "header_bg": "#282a36",
+  "header_fg": "#50fa7b",
+  "title": "#ff79c6",
+  "accent": "#bd93f9",
+  "accent2": "#8be9fd",
+  "cpu_color": "#50fa7b",
+  "gpu_color": "#ff79c6",
+  "mem_color": "#8be9fd",
+  "net_down": "#50fa7b",
+  "net_up": "#ffb86c",
+  "text": "#f8f8f2",
+  "dim": "#6272a4",
+  "warn": "#ffb86c",
+  "crit": "#ff5555",
+  "proc_sel_bg": "#44475a",
+  "proc_sel_fg": "#f8f8f2"
+}
