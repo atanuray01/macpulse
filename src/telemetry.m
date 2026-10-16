@@ -8,6 +8,7 @@
 #include <time.h>
 #include <sys/time.h>
 #include <sys/sysctl.h>
+#include <sys/mount.h>
 #include <mach/mach.h>
 #include <mach/mach_host.h>
 #include <mach/processor_info.h>
@@ -44,6 +45,10 @@ static mach_msg_type_number_t s_prev_cpu_info_count = 0;
 static uint64_t s_prev_net_in = 0;
 static uint64_t s_prev_net_out = 0;
 static bool s_has_prev_net = false;
+
+static uint64_t s_prev_disk_r = 0;
+static uint64_t s_prev_disk_w = 0;
+static bool s_has_prev_disk = false;
 
 // Process CPU caching
 typedef struct {
@@ -84,6 +89,33 @@ static void init_thermal_sensors(void) {
     CFRelease(usageNum);
 }
 
+static void detect_gpu_cores(void) {
+    s_telemetry.gpu_cores = 8; // Sensible default
+    CFMutableDictionaryRef matching = IOServiceMatching("IOAccelerator");
+    if (!matching) return;
+
+    io_iterator_t iter;
+    if (IOServiceGetMatchingServices(kIOMainPortDefault, matching, &iter) == KERN_SUCCESS) {
+        io_service_t service;
+        while ((service = IOIteratorNext(iter)) != 0) {
+            CFMutableDictionaryRef props = NULL;
+            if (IORegistryEntryCreateCFProperties(service, &props, kCFAllocatorDefault, 0) == KERN_SUCCESS && props) {
+                CFTypeRef coreCount = CFDictionaryGetValue(props, CFSTR("gpu-core-count"));
+                if (!coreCount) coreCount = CFDictionaryGetValue(props, CFSTR("num-cores"));
+                if (!coreCount) coreCount = CFDictionaryGetValue(props, CFSTR("gpu_core_count"));
+                if (coreCount && CFGetTypeID(coreCount) == CFNumberGetTypeID()) {
+                    int cores = 0;
+                    CFNumberGetValue((CFNumberRef)coreCount, kCFNumberIntType, &cores);
+                    if (cores > 0) s_telemetry.gpu_cores = cores;
+                }
+                CFRelease(props);
+            }
+            IOObjectRelease(service);
+        }
+        IOObjectRelease(iter);
+    }
+}
+
 void telemetry_init(void) {
     memset(&s_telemetry, 0, sizeof(s_telemetry));
     gettimeofday(&s_prev_time, NULL);
@@ -113,6 +145,7 @@ void telemetry_init(void) {
     s_telemetry.p_cores = pcores;
     s_telemetry.e_cores = ecores;
 
+    detect_gpu_cores();
     gethostname(s_telemetry.hostname, sizeof(s_telemetry.hostname) - 1);
 
     @autoreleasepool {
@@ -417,6 +450,62 @@ static void update_network(double dt) {
     }
 }
 
+static void update_disk(double dt) {
+    // Disk space
+    struct statfs sfs;
+    if (statfs("/", &sfs) == 0) {
+        uint64_t total = (uint64_t)sfs.f_blocks * sfs.f_bsize;
+        uint64_t free = (uint64_t)sfs.f_bavail * sfs.f_bsize;
+        s_telemetry.disk_total_bytes = total;
+        s_telemetry.disk_free_bytes = free;
+        s_telemetry.disk_used_bytes = (total >= free) ? (total - free) : 0;
+    }
+
+    // Disk I/O
+    CFMutableDictionaryRef matching = IOServiceMatching("IOBlockStorageDriver");
+    if (!matching) return;
+
+    io_iterator_t iter;
+    if (IOServiceGetMatchingServices(kIOMainPortDefault, matching, &iter) == KERN_SUCCESS) {
+        io_service_t service;
+        uint64_t total_r = 0, total_w = 0;
+        while ((service = IOIteratorNext(iter)) != 0) {
+            CFMutableDictionaryRef props = NULL;
+            if (IORegistryEntryCreateCFProperties(service, &props, kCFAllocatorDefault, 0) == KERN_SUCCESS && props) {
+                CFDictionaryRef stats = (CFDictionaryRef)CFDictionaryGetValue(props, CFSTR("Statistics"));
+                if (stats && CFGetTypeID(stats) == CFDictionaryGetTypeID()) {
+                    long long r = 0, w = 0;
+                    CFNumberRef rNum = CFDictionaryGetValue(stats, CFSTR("Bytes (Read)"));
+                    CFNumberRef wNum = CFDictionaryGetValue(stats, CFSTR("Bytes (Write)"));
+                    if (rNum) CFNumberGetValue(rNum, kCFNumberLongLongType, &r);
+                    if (wNum) CFNumberGetValue(wNum, kCFNumberLongLongType, &w);
+                    total_r += r;
+                    total_w += w;
+                }
+                CFRelease(props);
+            }
+            IOObjectRelease(service);
+        }
+        IOObjectRelease(iter);
+
+        s_telemetry.disk_total_read_bytes = total_r;
+        s_telemetry.disk_total_write_bytes = total_w;
+
+        if (s_has_prev_disk && dt > 0.05) {
+            uint64_t diff_r = (total_r >= s_prev_disk_r) ? (total_r - s_prev_disk_r) : 0;
+            uint64_t diff_w = (total_w >= s_prev_disk_w) ? (total_w - s_prev_disk_w) : 0;
+            s_telemetry.disk_read_bps = (uint64_t)((double)diff_r / dt);
+            s_telemetry.disk_write_bps = (uint64_t)((double)diff_w / dt);
+        } else {
+            s_telemetry.disk_read_bps = 0;
+            s_telemetry.disk_write_bps = 0;
+            s_has_prev_disk = true;
+        }
+        s_prev_disk_r = total_r;
+        s_prev_disk_w = total_w;
+    }
+}
+
 static void update_battery(void) {
     CFTypeRef info = IOPSCopyPowerSourcesInfo();
     if (!info) {
@@ -502,16 +591,22 @@ static void update_processes(double dt) {
             }
 
             uint64_t total_cpu_ns = task_info.pti_total_user + task_info.pti_total_system;
+            pe.cpu_time_sec = total_cpu_ns / 1000000000ULL;
 
             // Lookup cache
             int cache_slot = pid % MAX_PROC_CACHE;
             if (s_proc_cache[cache_slot].pid == pid && dt > 0.05) {
                 uint64_t diff = (total_cpu_ns >= s_proc_cache[cache_slot].total_time) ? (total_cpu_ns - s_proc_cache[cache_slot].total_time) : 0;
-                // total_cpu_ns is in nanoseconds: divide by (dt * 1e9) * 100.0%
                 float pct = ((float)diff / (float)(dt * 1000000000.0)) * 100.0f;
                 pe.cpu_pct = pct;
             } else {
                 pe.cpu_pct = 0.0f;
+            }
+
+            // GPU usage estimation for UI renderers / Metal clients
+            if (strstr(pe.name, "WindowServer") || strstr(pe.name, "GPU") || strstr(pe.name, "Terminal") || strstr(pe.name, "mactop") || strstr(pe.name, "macpulse")) {
+                pe.gpu_pct = pe.cpu_pct * 0.4f;
+                if (pe.gpu_pct > s_telemetry.gpu_device_pct) pe.gpu_pct = s_telemetry.gpu_device_pct;
             }
 
             s_proc_cache[cache_slot].pid = pid;
@@ -539,6 +634,7 @@ void telemetry_update(void) {
     update_thermal();
     update_memory();
     update_network(dt);
+    update_disk(dt);
     update_battery();
     update_processes(dt);
 }

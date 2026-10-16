@@ -51,7 +51,76 @@ static void add_theme(Theme t) {
 void theme_init_defaults(void) {
     s_theme_count = 0;
 
-    // 1. Cyberpunk 2077
+    // 1. Matrix Hacker (Default)
+    add_theme((Theme){
+        .name = "Matrix Hacker",
+        .desc = "Digital phosphor emerald greens, high contrast terminal",
+        .border = color_hex("#00ff66"),
+        .header_bg = color_hex("#041c09"),
+        .header_fg = color_hex("#00ff66"),
+        .title = color_hex("#00ff66"),
+        .accent = color_hex("#55ff99"),
+        .accent2 = color_hex("#00cc55"),
+        .cpu_color = color_hex("#00ff66"),
+        .gpu_color = color_hex("#55ff99"),
+        .mem_color = color_hex("#33cc66"),
+        .net_down = color_hex("#00ff66"),
+        .net_up = color_hex("#88ffaa"),
+        .text = color_hex("#b3ffcc"),
+        .dim = color_hex("#1f6633"),
+        .warn = color_hex("#ffff33"),
+        .crit = color_hex("#ff3333"),
+        .proc_sel_bg = color_hex("#0a3d16"),
+        .proc_sel_fg = color_hex("#00ff66")
+    });
+
+    // 2. Linux Arch Cyan
+    add_theme((Theme){
+        .name = "Linux Arch Cyan",
+        .desc = "Electric cyan, deep navy, and ice blue Linux terminal",
+        .border = color_hex("#00f0ff"),
+        .header_bg = color_hex("#081a26"),
+        .header_fg = color_hex("#00f0ff"),
+        .title = color_hex("#70d6ff"),
+        .accent = color_hex("#00f0ff"),
+        .accent2 = color_hex("#3a86ff"),
+        .cpu_color = color_hex("#00f0ff"),
+        .gpu_color = color_hex("#70d6ff"),
+        .mem_color = color_hex("#3a86ff"),
+        .net_down = color_hex("#00f0ff"),
+        .net_up = color_hex("#ffbe0b"),
+        .text = color_hex("#e0f7fa"),
+        .dim = color_hex("#214d63"),
+        .warn = color_hex("#ffbe0b"),
+        .crit = color_hex("#ff006e"),
+        .proc_sel_bg = color_hex("#0e3247"),
+        .proc_sel_fg = color_hex("#00f0ff")
+    });
+
+    // 3. Ubuntu Amber
+    add_theme((Theme){
+        .name = "Ubuntu Amber",
+        .desc = "Classic warm phosphor amber and Ubuntu orange",
+        .border = color_hex("#ff9900"),
+        .header_bg = color_hex("#261005"),
+        .header_fg = color_hex("#ff9900"),
+        .title = color_hex("#e95420"),
+        .accent = color_hex("#ff9900"),
+        .accent2 = color_hex("#ffb703"),
+        .cpu_color = color_hex("#ff9900"),
+        .gpu_color = color_hex("#e95420"),
+        .mem_color = color_hex("#ffb703"),
+        .net_down = color_hex("#2ec4b6"),
+        .net_up = color_hex("#e71d36"),
+        .text = color_hex("#fff3e0"),
+        .dim = color_hex("#663d14"),
+        .warn = color_hex("#ffb703"),
+        .crit = color_hex("#e71d36"),
+        .proc_sel_bg = color_hex("#471f0a"),
+        .proc_sel_fg = color_hex("#ff9900")
+    });
+
+    // 4. Cyberpunk 2077
     add_theme((Theme){
         .name = "Cyberpunk 2077",
         .desc = "High contrast neon pink, electric yellow and laser cyan",
@@ -74,30 +143,7 @@ void theme_init_defaults(void) {
         .proc_sel_fg = color_hex("#00ffff")
     });
 
-    // 2. Tokyo Night
-    add_theme((Theme){
-        .name = "Tokyo Night",
-        .desc = "Modern clean indigo, soft cyan, purple and warm orange",
-        .border = color_hex("#7aa2f7"),
-        .header_bg = color_hex("#1f2335"),
-        .header_fg = color_hex("#7dcfff"),
-        .title = color_hex("#bb9af7"),
-        .accent = color_hex("#7dcfff"),
-        .accent2 = color_hex("#ff9e64"),
-        .cpu_color = color_hex("#7aa2f7"),
-        .gpu_color = color_hex("#bb9af7"),
-        .mem_color = color_hex("#7dcfff"),
-        .net_down = color_hex("#9ece6a"),
-        .net_up = color_hex("#e0af68"),
-        .text = color_hex("#c0caf5"),
-        .dim = color_hex("#565f89"),
-        .warn = color_hex("#e0af68"),
-        .crit = color_hex("#f7768e"),
-        .proc_sel_bg = color_hex("#28345a"),
-        .proc_sel_fg = color_hex("#c0caf5")
-    });
-
-    // 3. Dracula
+    // 5. Dracula Pro
     add_theme((Theme){
         .name = "Dracula Pro",
         .desc = "Iconic gothic dark theme with vibrant pastels",
@@ -120,7 +166,30 @@ void theme_init_defaults(void) {
         .proc_sel_fg = color_hex("#f8f8f2")
     });
 
-    // 4. Nord Arctic
+    // 6. Tokyo Night
+    add_theme((Theme){
+        .name = "Tokyo Night",
+        .desc = "Modern clean indigo, soft cyan, purple and warm orange",
+        .border = color_hex("#7aa2f7"),
+        .header_bg = color_hex("#1f2335"),
+        .header_fg = color_hex("#7dcfff"),
+        .title = color_hex("#bb9af7"),
+        .accent = color_hex("#7dcfff"),
+        .accent2 = color_hex("#ff9e64"),
+        .cpu_color = color_hex("#7aa2f7"),
+        .gpu_color = color_hex("#bb9af7"),
+        .mem_color = color_hex("#7dcfff"),
+        .net_down = color_hex("#9ece6a"),
+        .net_up = color_hex("#e0af68"),
+        .text = color_hex("#c0caf5"),
+        .dim = color_hex("#565f89"),
+        .warn = color_hex("#e0af68"),
+        .crit = color_hex("#f7768e"),
+        .proc_sel_bg = color_hex("#28345a"),
+        .proc_sel_fg = color_hex("#c0caf5")
+    });
+
+    // 7. Nord Arctic
     add_theme((Theme){
         .name = "Nord Arctic",
         .desc = "Arctic blue, aurora green and clean glacial tones",
@@ -143,7 +212,7 @@ void theme_init_defaults(void) {
         .proc_sel_fg = color_hex("#eceff4")
     });
 
-    // 5. Catppuccin Mocha
+    // 8. Catppuccin Mocha
     add_theme((Theme){
         .name = "Catppuccin Mocha",
         .desc = "Warm soothing pastel palette with mauve, peach and teal",
@@ -166,7 +235,7 @@ void theme_init_defaults(void) {
         .proc_sel_fg = color_hex("#cdd6f4")
     });
 
-    // 6. Monokai Pro
+    // 9. Monokai Pro
     add_theme((Theme){
         .name = "Monokai Pro",
         .desc = "High-energy magenta, acid yellow, and bright mint",
@@ -189,7 +258,7 @@ void theme_init_defaults(void) {
         .proc_sel_fg = color_hex("#ffd866")
     });
 
-    // 7. Gruvbox Dark
+    // 10. Gruvbox Dark
     add_theme((Theme){
         .name = "Gruvbox Dark",
         .desc = "Warm retro groove with gold, aqua, and autumn orange",
@@ -212,53 +281,30 @@ void theme_init_defaults(void) {
         .proc_sel_fg = color_hex("#ebdbb2")
     });
 
-    // 8. Matrix Hacker
+    // 11. Kali Linux Dark
     add_theme((Theme){
-        .name = "Matrix Hacker",
-        .desc = "Digital rain monochrome phosphor greens",
-        .border = color_hex("#00ff66"),
-        .header_bg = color_hex("#051a08"),
-        .header_fg = color_hex("#55ff99"),
-        .title = color_hex("#00ff66"),
-        .accent = color_hex("#00ff66"),
-        .accent2 = color_hex("#55ff99"),
-        .cpu_color = color_hex("#00ff66"),
-        .gpu_color = color_hex("#55ff99"),
-        .mem_color = color_hex("#33cc66"),
-        .net_down = color_hex("#00ff66"),
-        .net_up = color_hex("#88ffaa"),
-        .text = color_hex("#b3ffcc"),
-        .dim = color_hex("#1a592e"),
-        .warn = color_hex("#ffff33"),
-        .crit = color_hex("#ff3333"),
-        .proc_sel_bg = color_hex("#0a3314"),
-        .proc_sel_fg = color_hex("#00ff66")
-    });
-
-    // 9. Solarized Dark
-    add_theme((Theme){
-        .name = "Solarized Dark",
-        .desc = "Precision engineered scientific palette with teal and cyan",
-        .border = color_hex("#2aa198"),
-        .header_bg = color_hex("#073642"),
-        .header_fg = color_hex("#268bd2"),
-        .title = color_hex("#2aa198"),
-        .accent = color_hex("#268bd2"),
-        .accent2 = color_hex("#6c71c4"),
+        .name = "Kali Linux Dark",
+        .desc = "Offensive security dark terminal with stealth crimson & ice blue",
+        .border = color_hex("#268bd2"),
+        .header_bg = color_hex("#101216"),
+        .header_fg = color_hex("#ff3333"),
+        .title = color_hex("#268bd2"),
+        .accent = color_hex("#ff3333"),
+        .accent2 = color_hex("#2aa198"),
         .cpu_color = color_hex("#268bd2"),
-        .gpu_color = color_hex("#6c71c4"),
+        .gpu_color = color_hex("#ff3333"),
         .mem_color = color_hex("#2aa198"),
-        .net_down = color_hex("#859900"),
-        .net_up = color_hex("#b58900"),
-        .text = color_hex("#93a1a1"),
-        .dim = color_hex("#586e75"),
-        .warn = color_hex("#b58900"),
-        .crit = color_hex("#dc322f"),
-        .proc_sel_bg = color_hex("#073642"),
-        .proc_sel_fg = color_hex("#eee8d5")
+        .net_down = color_hex("#268bd2"),
+        .net_up = color_hex("#ff3333"),
+        .text = color_hex("#dce2eb"),
+        .dim = color_hex("#384252"),
+        .warn = color_hex("#ffaa00"),
+        .crit = color_hex("#ff2222"),
+        .proc_sel_bg = color_hex("#1c2331"),
+        .proc_sel_fg = color_hex("#ff3333")
     });
 
-    // 10. Apple Classic
+    // 12. Apple Classic
     add_theme((Theme){
         .name = "Apple Classic",
         .desc = "Minimalist Cupertino styling with silver, blue and emerald",
@@ -279,52 +325,6 @@ void theme_init_defaults(void) {
         .crit = color_hex("#ff453a"),
         .proc_sel_bg = color_hex("#2c2c2e"),
         .proc_sel_fg = color_hex("#ffffff")
-    });
-
-    // 11. Sunset Horizon
-    add_theme((Theme){
-        .name = "Sunset Horizon",
-        .desc = "Warm twilight gradient with flamingo pink and golden mango",
-        .border = color_hex("#ff5e62"),
-        .header_bg = color_hex("#2b1123"),
-        .header_fg = color_hex("#ff9966"),
-        .title = color_hex("#ff5e62"),
-        .accent = color_hex("#ff9966"),
-        .accent2 = color_hex("#d152a5"),
-        .cpu_color = color_hex("#ff5e62"),
-        .gpu_color = color_hex("#d152a5"),
-        .mem_color = color_hex("#ff9966"),
-        .net_down = color_hex("#ffd166"),
-        .net_up = color_hex("#ef476f"),
-        .text = color_hex("#ffe5ec"),
-        .dim = color_hex("#7a4d65"),
-        .warn = color_hex("#ffd166"),
-        .crit = color_hex("#ef476f"),
-        .proc_sel_bg = color_hex("#421d37"),
-        .proc_sel_fg = color_hex("#ff9966")
-    });
-
-    // 12. Synthwave 84
-    add_theme((Theme){
-        .name = "Synthwave 84",
-        .desc = "Outrun aesthetic with magenta laser and radioactive cyan",
-        .border = color_hex("#ff007f"),
-        .header_bg = color_hex("#20092c"),
-        .header_fg = color_hex("#00fff7"),
-        .title = color_hex("#fe4450"),
-        .accent = color_hex("#00fff7"),
-        .accent2 = color_hex("#ff007f"),
-        .cpu_color = color_hex("#00fff7"),
-        .gpu_color = color_hex("#ff007f"),
-        .mem_color = color_hex("#ffea00"),
-        .net_down = color_hex("#72f1b8"),
-        .net_up = color_hex("#ff8b39"),
-        .text = color_hex("#fbfbfc"),
-        .dim = color_hex("#614d85"),
-        .warn = color_hex("#ffea00"),
-        .crit = color_hex("#fe4450"),
-        .proc_sel_bg = color_hex("#37174d"),
-        .proc_sel_fg = color_hex("#00fff7")
     });
 }
 
@@ -418,12 +418,12 @@ bool theme_load_from_json(const char *filepath) {
 
     char name[64] = "Custom Theme";
     char desc[128] = "User custom theme loaded from JSON";
-    char border[16] = "#00f0ff", header_bg[16] = "#1f2335", header_fg[16] = "#ffffff";
-    char title[16] = "#ffe600", accent[16] = "#00f0ff", accent2[16] = "#ff007f";
-    char cpu[16] = "#00f0ff", gpu[16] = "#ff007f", mem[16] = "#ffe600";
-    char net_down[16] = "#00ff66", net_up[16] = "#ff7700";
-    char text[16] = "#ffffff", dim[16] = "#666688", warn[16] = "#ffe600", crit[16] = "#ff003c";
-    char sel_bg[16] = "#332244", sel_fg[16] = "#ffffff";
+    char border[16] = "#00ff66", header_bg[16] = "#041c09", header_fg[16] = "#00ff66";
+    char title[16] = "#00ff66", accent[16] = "#55ff99", accent2[16] = "#00cc55";
+    char cpu[16] = "#00ff66", gpu[16] = "#55ff99", mem[16] = "#33cc66";
+    char net_down[16] = "#00ff66", net_up[16] = "#88ffaa";
+    char text[16] = "#b3ffcc", dim[16] = "#1f6633", warn[16] = "#ffff33", crit[16] = "#ff3333";
+    char sel_bg[16] = "#0a3d16", sel_fg[16] = "#00ff66";
 
     extract_json_str(buf, "name", name, sizeof(name));
     extract_json_str(buf, "desc", desc, sizeof(desc));

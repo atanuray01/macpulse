@@ -14,10 +14,12 @@ typedef struct {
     uid_t uid;
     char username[32];
     float cpu_pct;
+    float gpu_pct;
     uint64_t mem_bytes;
     float mem_pct;
     char name[64];
     char state[8];
+    uint64_t cpu_time_sec;
 } ProcessEntry;
 
 typedef struct {
@@ -36,6 +38,7 @@ typedef struct {
     int total_cores;
     int p_cores;
     int e_cores;
+    int gpu_cores;
     double load_avg[3];
     char uptime_str[64];
 
@@ -88,6 +91,15 @@ typedef struct {
     float history_net_down[HISTORY_LEN];
     float history_net_up[HISTORY_LEN];
     int history_net_count;
+
+    // Disk Telemetry
+    uint64_t disk_total_bytes;
+    uint64_t disk_used_bytes;
+    uint64_t disk_free_bytes;
+    uint64_t disk_read_bps;
+    uint64_t disk_write_bps;
+    uint64_t disk_total_read_bytes;
+    uint64_t disk_total_write_bytes;
 
     // Battery Telemetry
     bool has_battery;
