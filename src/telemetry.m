@@ -399,6 +399,13 @@ static void update_memory(void) {
         s_telemetry.swap_total_bytes = swap.xsu_total;
         s_telemetry.swap_used_bytes = swap.xsu_used;
     }
+
+    if (s_telemetry.history_mem_count < HISTORY_LEN) {
+        s_telemetry.history_mem[s_telemetry.history_mem_count++] = s_telemetry.mem_used_pct;
+    } else {
+        memmove(&s_telemetry.history_mem[0], &s_telemetry.history_mem[1], sizeof(float) * (HISTORY_LEN - 1));
+        s_telemetry.history_mem[HISTORY_LEN - 1] = s_telemetry.mem_used_pct;
+    }
 }
 
 static void update_network(double dt) {

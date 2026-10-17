@@ -19,12 +19,21 @@ typedef enum {
     VIEW_ZEN
 } ViewMode;
 
+typedef enum {
+    GRAPH_MODE_SPLIT = 0,    // Side-by-side CPU & GPU ttyplots (stacked if narrow)
+    GRAPH_MODE_STACKED,      // Stacked full-width CPU and GPU ttyplots
+    GRAPH_MODE_COMBINED,     // Dual-series overlay CPU (bars) + GPU (dots)
+    GRAPH_MODE_NET           // Network Throughput ttyplot (Download + Upload)
+} GraphMode;
+
 typedef struct {
     int term_cols;
     int term_rows;
     ModalType modal;
     int theme_cursor;
     ViewMode view_mode;
+    GraphMode graph_mode;
+    bool show_procs;
 
     // Process selection & scrolling
     int proc_scroll;

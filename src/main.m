@@ -130,6 +130,9 @@ static void print_usage(const char *prog) {
     printf("  q                      Quit MacPulse\n");
     printf("  t                      Open interactive Theme Customizer popup\n");
     printf("  T                      Instantly cycle to next theme\n");
+    printf("  g                      Cycle Graph modes (Split CPU/GPU, Stacked, Dual-Series, Network)\n");
+    printf("  Tab                    Toggle Process Table / Maximize Graphs\n");
+    printf("  v                      Cycle View modes (Full, Compact, Zen)\n");
     printf("  c / m / p / n          Sort processes by CPU%% / Memory / PID / Name\n");
     printf("  r                      Reverse sort order\n");
     printf("  /                      Search / filter processes by name or user\n");
@@ -204,6 +207,8 @@ int main(int argc, char *argv[]) {
     state.refresh_ms = refresh_ms;
     state.modal = MODAL_NONE;
     state.view_mode = VIEW_FULL;
+    state.graph_mode = GRAPH_MODE_SPLIT;
+    state.show_procs = true;
 
     int current_sort = SORT_BY_CPU;
     bool sort_reverse = false;
@@ -331,6 +336,33 @@ int main(int argc, char *argv[]) {
                             theme_cycle_next();
                             save_user_config(theme_current()->name, state.refresh_ms);
                             break;
+                        case 'g':
+                        case 'G': {
+                            state.graph_mode = (state.graph_mode + 1) % 4;
+                            const char *g_names[] = {
+                                "Graph: Split CPU & GPU (Side-by-side)",
+                                "Graph: Stacked Full-Width (CPU / GPU)",
+                                "Graph: Combined Dual-Series (CPU + GPU)",
+                                "Graph: Network Bandwidth Throughput"
+                            };
+                            ui_set_status(&state, g_names[state.graph_mode]);
+                            break;
+                        }
+                        case '\t':
+                            state.show_procs = !state.show_procs;
+                            ui_set_status(&state, state.show_procs ? "Activity Monitor Shown" : "Maximized Graphical History");
+                            break;
+                        case 'v':
+                        case 'V': {
+                            state.view_mode = (state.view_mode + 1) % 3;
+                            const char *v_names[] = {
+                                "View: Full Dashboard",
+                                "View: Compact Layout",
+                                "View: Zen Graphs"
+                            };
+                            ui_set_status(&state, v_names[state.view_mode]);
+                            break;
+                        }
                         case 'c':
                         case 'C':
                             current_sort = SORT_BY_CPU;

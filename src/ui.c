@@ -75,26 +75,18 @@ static void buf_append_str(StrBuf *b, const char *s) {
     b->data[b->len] = '\0';
 }
 
-static void buf_printf(StrBuf *b, const char *fmt, ...) {
-    va_list args;
-    va_start(args, fmt);
-    char tmp[1024];
-    int n = vsnprintf(tmp, sizeof(tmp), fmt, args);
-    va_end(args);
-    if (n > 0) {
-        buf_append_str(b, tmp);
-    }
-}
 
 void ui_init(void) {
     buf_init(&s_out_buf, 65536);
-    // Enter alternate screen, hide cursor, clear
-    write(STDOUT_FILENO, "\033[?1049h\033[2J\033[H\033[?25l", 18);
+    // Enter alternate screen, hide cursor, clear screen, home, disable auto-wrap
+    const char *init_seq = "\033[?1049h\033[2J\033[H\033[?25l\033[?7l";
+    write(STDOUT_FILENO, init_seq, strlen(init_seq));
 }
 
 void ui_cleanup(void) {
-    // Leave alternate screen, show cursor
-    write(STDOUT_FILENO, "\033[?1049l\033[?25h", 12);
+    // Re-enable auto-wrap, show cursor, leave alternate screen
+    const char *cleanup_seq = "\033[?7h\033[?25h\033[?1049l";
+    write(STDOUT_FILENO, cleanup_seq, strlen(cleanup_seq));
     buf_free(&s_out_buf);
 }
 
@@ -233,41 +225,22 @@ static void grid_box(int x, int y, int w, int h, const char *title, const char *
         }
     }
 
-    // Embed title: ┌─ Title ───...──┐
+    // Embed title: ┌─ Title • Extra ───...──┐
     int cur_x = x + 2;
     if (title && title[0]) {
         grid_set(x + 1, y, "─", border_col, (ColorRGB){0,0,0}, false, false, false);
-        int t_len = grid_print(cur_x, y, w - 6, title, title_col, true, false);
+        grid_set(cur_x++, y, " ", border_col, (ColorRGB){0,0,0}, false, false, false);
+        int t_len = grid_print(cur_x, y, w - 8, title, title_col, true, false);
         cur_x += t_len;
         grid_set(cur_x++, y, " ", border_col, (ColorRGB){0,0,0}, false, false, false);
     }
 
-    if (extra && extra[0] && (w - cur_x - (int)strlen(extra) - 2) > 0) {
-        grid_print(cur_x, y, w - cur_x - 3, extra, extra_col, false, false);
-    }
-}
-
-// Draw internal horizontal section divider: ├─ Title ────┤
-static void grid_divider(int x, int y, int w, const char *title, const char *extra,
-                         ColorRGB border_col, ColorRGB title_col, ColorRGB extra_col) {
-    if (w < 4) return;
-    grid_set(x, y, "├", border_col, (ColorRGB){0,0,0}, false, false, false);
-    grid_set(x + w - 1, y, "┤", border_col, (ColorRGB){0,0,0}, false, false, false);
-
-    for (int c = x + 1; c < x + w - 1; c++) {
-        grid_set(c, y, "─", border_col, (ColorRGB){0,0,0}, false, false, false);
-    }
-
-    int cur_x = x + 2;
-    if (title && title[0]) {
-        grid_set(x + 1, y, "─", border_col, (ColorRGB){0,0,0}, false, false, false);
-        int t_len = grid_print(cur_x, y, w - 6, title, title_col, true, false);
-        cur_x += t_len;
+    if (extra && extra[0] && (w - cur_x - (int)strlen(extra) - 3) > 0) {
+        grid_set(cur_x++, y, "•", border_col, (ColorRGB){0,0,0}, false, false, false);
         grid_set(cur_x++, y, " ", border_col, (ColorRGB){0,0,0}, false, false, false);
-    }
-
-    if (extra && extra[0] && (w - cur_x - (int)strlen(extra) - 2) > 0) {
-        grid_print(cur_x, y, w - cur_x - 3, extra, extra_col, false, false);
+        int e_len = grid_print(cur_x, y, w - cur_x - 3, extra, extra_col, false, false);
+        cur_x += e_len;
+        grid_set(cur_x++, y, " ", border_col, (ColorRGB){0,0,0}, false, false, false);
     }
 }
 
@@ -297,45 +270,6 @@ static void grid_bar(int x, int y, int width, float pct,
     grid_print(x + width + 1, y, 6, pct_buf, text_col, true, false);
 }
 
-// Draw sparkline graph inside panel
-static void grid_sparkline(int x, int y, int width, int height,
-                           const float *history, int count, float max_val,
-                           ColorRGB low_col, ColorRGB high_col, ColorRGB dim_col) {
-    const char *blocks[] = {" ", " ", "▂", "▃", "▄", "▅", "▆", "▇", "█"};
-    if (max_val <= 0.0f) max_val = 100.0f;
-    if (width <= 0 || height <= 0) return;
-
-    for (int r = 0; r < height; r++) {
-        int row_y = y + r;
-        float row_bottom = (float)(height - 1 - r) / (float)height * max_val;
-        float row_top = (float)(height - r) / (float)height * max_val;
-        float row_height = row_top - row_bottom;
-
-        for (int c = 0; c < width; c++) {
-            int hist_idx = count - width + c;
-            float val = 0.0f;
-            if (hist_idx >= 0 && hist_idx < count) {
-                val = history[hist_idx];
-            }
-
-            if (val <= row_bottom) {
-                grid_set(x + c, row_y, " ", dim_col, (ColorRGB){0,0,0}, false, false, false);
-            } else if (val >= row_top) {
-                float t = val / max_val;
-                ColorRGB col = color_lerp(low_col, high_col, t);
-                grid_set(x + c, row_y, "█", col, (ColorRGB){0,0,0}, false, false, false);
-            } else {
-                float fraction = (val - row_bottom) / row_height;
-                int block_idx = (int)(fraction * 8.0f);
-                if (block_idx < 1) block_idx = 1;
-                if (block_idx > 8) block_idx = 8;
-                float t = val / max_val;
-                ColorRGB col = color_lerp(low_col, high_col, t);
-                grid_set(x + c, row_y, blocks[block_idx], col, (ColorRGB){0,0,0}, false, false, false);
-            }
-        }
-    }
-}
 
 static void format_bytes(uint64_t bytes, char *out, size_t max) {
     const char *units[] = {"B", "KB", "MB", "GB", "TB"};
@@ -378,7 +312,6 @@ static void format_time_sec(uint64_t sec, char *out, size_t max) {
 // -------------------------------------------------------------
 static void grid_flush(void) {
     buf_reset(&s_out_buf);
-    buf_append_str(&s_out_buf, "\033[H"); // Cursor home
 
     ColorRGB prev_fg = {0,0,0};
     ColorRGB prev_bg = {0,0,0};
@@ -388,6 +321,11 @@ static void grid_flush(void) {
     bool in_style = false;
 
     for (int r = 0; r < s_grid.rows; r++) {
+        // Explicit row cursor positioning prevents spurious auto-wrap line feeds
+        char cup[32];
+        snprintf(cup, sizeof(cup), "\033[%d;1H", r + 1);
+        buf_append_str(&s_out_buf, cup);
+
         for (int c = 0; c < s_grid.cols; c++) {
             Cell *cell = &s_grid.cells[r][c];
 
@@ -419,14 +357,464 @@ static void grid_flush(void) {
 
             buf_append_str(&s_out_buf, cell->ch);
         }
-        if (r < s_grid.rows - 1) {
-            buf_append_str(&s_out_buf, "\033[0m\n");
-            in_style = false;
-        }
     }
     buf_append_str(&s_out_buf, "\033[0m");
 
     write(STDOUT_FILENO, s_out_buf.data, s_out_buf.len);
+}
+
+// -------------------------------------------------------------
+// TTYPLOT GRAPH ENGINE (Authentic ASCII/Unicode Graphing)
+// Reference: github.com/tenox7/ttyplot
+// -------------------------------------------------------------
+static void grid_ttyplot(int x, int y, int w, int h,
+                         const char *title, const char *extra,
+                         const float *history, int count,
+                         float max_val, const char *unit,
+                         ColorRGB plot_col, const Theme *t) {
+    if (w < 20 || h < 6) return;
+    if (max_val <= 0.0f) max_val = 100.0f;
+
+    grid_box(x, y, w, h, title, extra, t->border, t->title, t->dim);
+
+    int y_top = y + 1;
+    int y_axis = y + h - 3;
+    int y_stat = y + h - 2;
+    int plot_h = y_axis - y_top;
+    if (plot_h < 2) return;
+
+    int axis_x = x + 2;
+
+    // Top arrow ^ and label
+    grid_set(axis_x, y_top, "^", t->accent, (ColorRGB){0,0,0}, false, true, false);
+
+    char top_label[32];
+    if (max_val >= 100.0f) {
+        snprintf(top_label, sizeof(top_label), "%3.0f %s", max_val, unit);
+    } else {
+        snprintf(top_label, sizeof(top_label), "%4.1f %s", max_val, unit);
+    }
+    grid_print(axis_x + 2, y_top, 10, top_label, t->text, false, false);
+
+    // Vertical axis line |
+    for (int r = y_top + 1; r < y_axis; r++) {
+        grid_set(axis_x, r, "|", t->dim, (ColorRGB){0,0,0}, false, false, false);
+    }
+
+    // Horizontal axis line +--------->
+    grid_set(axis_x, y_axis, "+", t->accent, (ColorRGB){0,0,0}, false, true, false);
+    for (int c = axis_x + 1; c < x + w - 2; c++) {
+        grid_set(c, y_axis, "-", t->dim, (ColorRGB){0,0,0}, false, false, false);
+    }
+    grid_set(x + w - 2, y_axis, ">", t->accent, (ColorRGB){0,0,0}, false, true, false);
+
+    // Ticks & Dotted Grid
+    int num_ticks = (plot_h >= 7) ? 3 : (plot_h >= 4 ? 2 : 1);
+    float tick_fractions[3] = {0.75f, 0.50f, 0.25f};
+    if (num_ticks == 2) {
+        tick_fractions[0] = 0.66f;
+        tick_fractions[1] = 0.33f;
+    } else if (num_ticks == 1) {
+        tick_fractions[0] = 0.50f;
+    }
+
+    for (int ti = 0; ti < num_ticks; ti++) {
+        float f = tick_fractions[ti];
+        int r_offset = (int)roundf(f * (float)plot_h);
+        int tr = y_axis - r_offset;
+        if (tr > y_top && tr < y_axis) {
+            char t_lbl[32];
+            float tick_val = max_val * f;
+            if (max_val >= 100.0f) {
+                snprintf(t_lbl, sizeof(t_lbl), "%3.0f %s", tick_val, unit);
+            } else {
+                snprintf(t_lbl, sizeof(t_lbl), "%4.1f %s", tick_val, unit);
+            }
+            grid_print(axis_x + 2, tr, 10, t_lbl, t->dim, false, true);
+
+            int data_start = axis_x + 11;
+            int data_end = x + w - 3;
+            for (int dc = data_start; dc <= data_end; dc++) {
+                if ((dc - data_start) % 2 == 0) {
+                    grid_set(dc, tr, ".", t->dim, (ColorRGB){0,0,0}, false, false, true);
+                }
+            }
+        }
+    }
+
+    // Data Plotting
+    const char *blocks[] = {" ", " ", "▂", "▃", "▄", "▅", "▆", "▇", "█"};
+    int data_start = axis_x + 11;
+    int data_end = x + w - 3;
+    int data_w = data_end - data_start + 1;
+
+    if (data_w > 0) {
+        for (int c = 0; c < data_w; c++) {
+            int hist_idx = count - data_w + c;
+            if (hist_idx < 0 || hist_idx >= count) continue;
+
+            float val = history[hist_idx];
+            if (val < 0.0f) val = 0.0f;
+            float norm = val / max_val;
+            if (norm > 1.0f) norm = 1.0f;
+            float bar_h = norm * (float)plot_h;
+
+            ColorRGB col = (val > 80.0f) ? t->crit : ((val > 50.0f) ? t->warn : plot_col);
+            int screen_c = data_start + c;
+
+            for (int r = 0; r < plot_h; r++) {
+                int screen_r = y_axis - 1 - r;
+                if (bar_h >= (float)(r + 1)) {
+                    grid_set(screen_c, screen_r, "█", col, (ColorRGB){0,0,0}, false, false, false);
+                } else if (bar_h > (float)r && bar_h < (float)(r + 1)) {
+                    float frac = bar_h - (float)r;
+                    int b_idx = (int)(frac * 8.0f);
+                    if (b_idx < 1) b_idx = 1;
+                    if (b_idx > 8) b_idx = 8;
+                    grid_set(screen_c, screen_r, blocks[b_idx], col, (ColorRGB){0,0,0}, false, false, false);
+                }
+            }
+        }
+    }
+
+    // Stats row under axis
+    grid_set(axis_x, y_stat, "|", t->dim, (ColorRGB){0,0,0}, false, false, false);
+
+    float last_v = (count > 0) ? history[count - 1] : 0.0f;
+    float min_v = 999999.0f, max_v_seen = 0.0f, sum_v = 0.0f;
+    int n_samples = 0;
+    int start_i = (count > data_w) ? count - data_w : 0;
+    for (int i = start_i; i < count; i++) {
+        float v = history[i];
+        if (v < min_v) min_v = v;
+        if (v > max_v_seen) max_v_seen = v;
+        sum_v += v;
+        n_samples++;
+    }
+    if (n_samples == 0) min_v = 0.0f;
+    float avg_v = (n_samples > 0) ? (sum_v / (float)n_samples) : 0.0f;
+
+    char stat_buf[128];
+    if (max_val >= 100.0f) {
+        snprintf(stat_buf, sizeof(stat_buf), "last=%4.1f min=%4.1f max=%4.1f avg=%4.1f %s",
+                 last_v, min_v, max_v_seen, avg_v, unit);
+    } else {
+        snprintf(stat_buf, sizeof(stat_buf), "last=%.2f min=%.2f max=%.2f avg=%.2f %s",
+                 last_v, min_v, max_v_seen, avg_v, unit);
+    }
+    grid_print(axis_x + 2, y_stat, w - 8, stat_buf, t->text, true, false);
+
+    if (w >= 48) {
+        const char *tag = "ttyplot 1.0";
+        grid_print(x + w - (int)strlen(tag) - 3, y_stat, 16, tag, t->dim, false, true);
+    }
+}
+
+// Dual series ttyplot (overlay series 1 as solid bars, series 2 as dots)
+static void grid_ttyplot_dual(int x, int y, int w, int h,
+                              const char *title, const char *extra,
+                              const float *hist1, int count1, const char *name1, ColorRGB col1,
+                              const float *hist2, int count2, const char *name2, ColorRGB col2,
+                              float max_val, const char *unit,
+                              const Theme *t) {
+    if (w < 20 || h < 6) return;
+
+    if (max_val <= 0.0f) {
+        float m = 1.0f;
+        for (int i = 0; i < count1; i++) if (hist1[i] > m) m = hist1[i];
+        for (int i = 0; i < count2; i++) if (hist2[i] > m) m = hist2[i];
+        max_val = m * 1.15f;
+    }
+
+    grid_box(x, y, w, h, title, extra, t->border, t->title, t->dim);
+
+    int y_top = y + 1;
+    int y_axis = y + h - 3;
+    int y_stat = y + h - 2;
+    int plot_h = y_axis - y_top;
+    if (plot_h < 2) return;
+
+    int axis_x = x + 2;
+
+    // Top arrow ^ and label
+    grid_set(axis_x, y_top, "^", t->accent, (ColorRGB){0,0,0}, false, true, false);
+
+    char top_label[32];
+    if (max_val >= 100.0f) {
+        snprintf(top_label, sizeof(top_label), "%3.0f %s", max_val, unit);
+    } else {
+        snprintf(top_label, sizeof(top_label), "%4.1f %s", max_val, unit);
+    }
+    grid_print(axis_x + 2, y_top, 10, top_label, t->text, false, false);
+
+    // Vertical line |
+    for (int r = y_top + 1; r < y_axis; r++) {
+        grid_set(axis_x, r, "|", t->dim, (ColorRGB){0,0,0}, false, false, false);
+    }
+
+    // Horizontal axis line +--------->
+    grid_set(axis_x, y_axis, "+", t->accent, (ColorRGB){0,0,0}, false, true, false);
+    for (int c = axis_x + 1; c < x + w - 2; c++) {
+        grid_set(c, y_axis, "-", t->dim, (ColorRGB){0,0,0}, false, false, false);
+    }
+    grid_set(x + w - 2, y_axis, ">", t->accent, (ColorRGB){0,0,0}, false, true, false);
+
+    // Ticks & Dotted Grid
+    int num_ticks = (plot_h >= 7) ? 3 : (plot_h >= 4 ? 2 : 1);
+    float tick_fractions[3] = {0.75f, 0.50f, 0.25f};
+    if (num_ticks == 2) {
+        tick_fractions[0] = 0.66f;
+        tick_fractions[1] = 0.33f;
+    } else if (num_ticks == 1) {
+        tick_fractions[0] = 0.50f;
+    }
+
+    for (int ti = 0; ti < num_ticks; ti++) {
+        float f = tick_fractions[ti];
+        int r_offset = (int)roundf(f * (float)plot_h);
+        int tr = y_axis - r_offset;
+        if (tr > y_top && tr < y_axis) {
+            char t_lbl[32];
+            float tick_val = max_val * f;
+            if (max_val >= 100.0f) {
+                snprintf(t_lbl, sizeof(t_lbl), "%3.0f %s", tick_val, unit);
+            } else {
+                snprintf(t_lbl, sizeof(t_lbl), "%4.1f %s", tick_val, unit);
+            }
+            grid_print(axis_x + 2, tr, 10, t_lbl, t->dim, false, true);
+
+            int data_start = axis_x + 11;
+            int data_end = x + w - 3;
+            for (int dc = data_start; dc <= data_end; dc++) {
+                if ((dc - data_start) % 2 == 0) {
+                    grid_set(dc, tr, ".", t->dim, (ColorRGB){0,0,0}, false, false, true);
+                }
+            }
+        }
+    }
+
+    // Data Plotting: Series 1 as bars, Series 2 as dots
+    const char *blocks[] = {" ", " ", "▂", "▃", "▄", "▅", "▆", "▇", "█"};
+    int data_start = axis_x + 11;
+    int data_end = x + w - 3;
+    int data_w = data_end - data_start + 1;
+
+    if (data_w > 0) {
+        for (int c = 0; c < data_w; c++) {
+            int screen_c = data_start + c;
+
+            // Series 1 (Bars)
+            int idx1 = count1 - data_w + c;
+            float val1 = (idx1 >= 0 && idx1 < count1) ? hist1[idx1] : 0.0f;
+            if (val1 < 0.0f) val1 = 0.0f;
+            float norm1 = val1 / max_val;
+            if (norm1 > 1.0f) norm1 = 1.0f;
+            float bar_h1 = norm1 * (float)plot_h;
+
+            for (int r = 0; r < plot_h; r++) {
+                int screen_r = y_axis - 1 - r;
+                if (bar_h1 >= (float)(r + 1)) {
+                    grid_set(screen_c, screen_r, "█", col1, (ColorRGB){0,0,0}, false, false, false);
+                } else if (bar_h1 > (float)r && bar_h1 < (float)(r + 1)) {
+                    float frac = bar_h1 - (float)r;
+                    int b_idx = (int)(frac * 8.0f);
+                    if (b_idx < 1) b_idx = 1;
+                    if (b_idx > 8) b_idx = 8;
+                    grid_set(screen_c, screen_r, blocks[b_idx], col1, (ColorRGB){0,0,0}, false, false, false);
+                }
+            }
+
+            // Series 2 (Dots/Points)
+            int idx2 = count2 - data_w + c;
+            if (idx2 >= 0 && idx2 < count2) {
+                float val2 = hist2[idx2];
+                if (val2 < 0.0f) val2 = 0.0f;
+                float norm2 = val2 / max_val;
+                if (norm2 > 1.0f) norm2 = 1.0f;
+                int dot_r = (int)roundf(norm2 * (float)(plot_h - 1));
+                int screen_r2 = y_axis - 1 - dot_r;
+                grid_set(screen_c, screen_r2, "•", col2, (ColorRGB){0,0,0}, false, true, false);
+            }
+        }
+    }
+
+    // Stats row under axis
+    grid_set(axis_x, y_stat, "|", t->dim, (ColorRGB){0,0,0}, false, false, false);
+
+    float last1 = (count1 > 0) ? hist1[count1 - 1] : 0.0f;
+    float sum1 = 0.0f; int n1 = 0;
+    for (int i = (count1 > data_w ? count1 - data_w : 0); i < count1; i++) { sum1 += hist1[i]; n1++; }
+    float avg1 = (n1 > 0) ? (sum1 / n1) : 0.0f;
+
+    float last2 = (count2 > 0) ? hist2[count2 - 1] : 0.0f;
+    float sum2 = 0.0f; int n2 = 0;
+    for (int i = (count2 > data_w ? count2 - data_w : 0); i < count2; i++) { sum2 += hist2[i]; n2++; }
+    float avg2 = (n2 > 0) ? (sum2 / n2) : 0.0f;
+
+    char stat_buf[256];
+    snprintf(stat_buf, sizeof(stat_buf), "█ %s: last=%.1f avg=%.1f%s  • %s: last=%.1f avg=%.1f%s",
+             name1, last1, avg1, unit, name2, last2, avg2, unit);
+    grid_print(axis_x + 2, y_stat, w - 8, stat_buf, t->text, true, false);
+
+    if (w >= 50) {
+        const char *tag = "ttyplot 1.0";
+        grid_print(x + w - (int)strlen(tag) - 3, y_stat, 16, tag, t->dim, false, true);
+    }
+}
+
+// -------------------------------------------------------------
+// 4 MAIN FEATURE READING CARDS
+// -------------------------------------------------------------
+static void draw_cpu_card(int x, int y, int w, int h, const SystemTelemetry *telem, const Theme *t) {
+    char extra[64] = "";
+    if (telem->cpu_temp_avg > 0) {
+        snprintf(extra, sizeof(extra), "%.1f°C", telem->cpu_temp_avg);
+    }
+    grid_box(x, y, w, h, "CPU MONITOR", extra, t->border, t->cpu_color, t->title);
+
+    int cur_y = y + 1;
+    grid_bar(x + 2, cur_y, w - 10, telem->cpu_total_pct, t->cpu_color, t->dim, t->text);
+    cur_y++;
+
+    if (cur_y < y + h - 1) {
+        char line1[128];
+        snprintf(line1, sizeof(line1), "User: %2.0f%%  Sys: %2.0f%%",
+                 telem->cpu_user_pct, telem->cpu_sys_pct);
+        grid_print(x + 2, cur_y, w - 4, line1, t->dim, false, false);
+        cur_y++;
+    }
+
+    if (cur_y < y + h - 1) {
+        char line2[128];
+        snprintf(line2, sizeof(line2), "Load: %.2f %.2f %.2f",
+                 telem->load_avg[0], telem->load_avg[1], telem->load_avg[2]);
+        grid_print(x + 2, cur_y, w - 4, line2, t->dim, false, false);
+        cur_y++;
+    }
+
+    if (cur_y < y + h - 1) {
+        char line3[128];
+        snprintf(line3, sizeof(line3), "%d Cores (%dE + %dP)",
+                 telem->total_cores, telem->e_cores, telem->p_cores);
+        grid_print(x + 2, cur_y, w - 4, line3, t->dim, false, false);
+    }
+}
+
+static void draw_gpu_card(int x, int y, int w, int h, const SystemTelemetry *telem, const Theme *t) {
+    char extra[64] = "";
+    if (telem->gpu_temp_avg > 0) {
+        snprintf(extra, sizeof(extra), "%.1f°C", telem->gpu_temp_avg);
+    }
+    grid_box(x, y, w, h, "GPU & VRAM", extra, t->border, t->gpu_color, t->title);
+
+    int cur_y = y + 1;
+    grid_bar(x + 2, cur_y, w - 10, telem->gpu_device_pct, t->gpu_color, t->dim, t->text);
+    cur_y++;
+
+    if (cur_y < y + h - 1) {
+        char line1[128];
+        snprintf(line1, sizeof(line1), "Renderer: %2.0f%%  Tiler: %2.0f%%",
+                 telem->gpu_renderer_pct, telem->gpu_tiler_pct);
+        grid_print(x + 2, cur_y, w - 4, line1, t->dim, false, false);
+        cur_y++;
+    }
+
+    if (cur_y < y + h - 1) {
+        char in_vram[32], alloc_vram[32];
+        format_bytes(telem->gpu_in_use_bytes, in_vram, sizeof(in_vram));
+        format_bytes(telem->gpu_alloc_bytes, alloc_vram, sizeof(alloc_vram));
+        char line2[128];
+        snprintf(line2, sizeof(line2), "VRAM: %s / %s", in_vram, alloc_vram);
+        grid_print(x + 2, cur_y, w - 4, line2, t->dim, false, false);
+        cur_y++;
+    }
+
+    if (cur_y < y + h - 1) {
+        char line3[128];
+        snprintf(line3, sizeof(line3), "%d GPU Cores • Metal 3", telem->gpu_cores);
+        grid_print(x + 2, cur_y, w - 4, line3, t->dim, false, false);
+    }
+}
+
+static void draw_mem_card(int x, int y, int w, int h, const SystemTelemetry *telem, const Theme *t) {
+    char used_str[32], tot_str[32];
+    format_bytes(telem->mem_used_bytes, used_str, sizeof(used_str));
+    format_bytes(telem->mem_total_bytes, tot_str, sizeof(tot_str));
+    char extra[64];
+    snprintf(extra, sizeof(extra), "%s", used_str);
+    grid_box(x, y, w, h, "UNIFIED MEMORY", extra, t->border, t->mem_color, t->title);
+
+    int cur_y = y + 1;
+    grid_bar(x + 2, cur_y, w - 10, telem->mem_used_pct, t->mem_color, t->dim, t->text);
+    cur_y++;
+
+    if (cur_y < y + h - 1) {
+        char app_str[32], wired_str[32];
+        format_bytes(telem->mem_active_bytes, app_str, sizeof(app_str));
+        format_bytes(telem->mem_wired_bytes, wired_str, sizeof(wired_str));
+        char line1[128];
+        snprintf(line1, sizeof(line1), "App: %s  Wired: %s", app_str, wired_str);
+        grid_print(x + 2, cur_y, w - 4, line1, t->dim, false, false);
+        cur_y++;
+    }
+
+    if (cur_y < y + h - 1) {
+        char comp_str[32], cache_str[32];
+        format_bytes(telem->mem_compressed_bytes, comp_str, sizeof(comp_str));
+        format_bytes(telem->mem_inactive_bytes, cache_str, sizeof(cache_str));
+        char line2[128];
+        snprintf(line2, sizeof(line2), "Comp: %s  Cache: %s", comp_str, cache_str);
+        grid_print(x + 2, cur_y, w - 4, line2, t->dim, false, false);
+        cur_y++;
+    }
+
+    if (cur_y < y + h - 1) {
+        char free_str[32], swap_str[32];
+        format_bytes(telem->mem_free_bytes, free_str, sizeof(free_str));
+        format_bytes(telem->swap_used_bytes, swap_str, sizeof(swap_str));
+        char line3[128];
+        snprintf(line3, sizeof(line3), "Free: %s  Swap: %s", free_str, swap_str);
+        grid_print(x + 2, cur_y, w - 4, line3, t->dim, false, false);
+    }
+}
+
+static void draw_net_card(int x, int y, int w, int h, const SystemTelemetry *telem, const Theme *t) {
+    char down_s[32], up_s[32];
+    format_speed(telem->net_download_bps, down_s, sizeof(down_s));
+    format_speed(telem->net_upload_bps, up_s, sizeof(up_s));
+    grid_box(x, y, w, h, "NETWORK SPEED", NULL, t->border, t->accent, t->title);
+
+    int cur_y = y + 1;
+    char dl_line[128];
+    snprintf(dl_line, sizeof(dl_line), "Download: ▼ %s", down_s);
+    grid_print(x + 2, cur_y, w - 4, dl_line, t->accent, true, false);
+    cur_y++;
+
+    if (cur_y < y + h - 1) {
+        char ul_line[128];
+        snprintf(ul_line, sizeof(ul_line), "Upload:   ▲ %s", up_s);
+        grid_print(x + 2, cur_y, w - 4, ul_line, t->accent, true, false);
+        cur_y++;
+    }
+
+    if (cur_y < y + h - 1) {
+        char in_tot[32], out_tot[32];
+        format_bytes(telem->net_total_in_bytes, in_tot, sizeof(in_tot));
+        format_bytes(telem->net_total_out_bytes, out_tot, sizeof(out_tot));
+        char line2[128];
+        snprintf(line2, sizeof(line2), "In: %s  Out: %s", in_tot, out_tot);
+        grid_print(x + 2, cur_y, w - 4, line2, t->dim, false, false);
+        cur_y++;
+    }
+
+    if (cur_y < y + h - 1) {
+        char r_s[32], w_s[32];
+        format_speed(telem->disk_read_bps, r_s, sizeof(r_s));
+        format_speed(telem->disk_write_bps, w_s, sizeof(w_s));
+        char line3[128];
+        snprintf(line3, sizeof(line3), "Disk IO: R %s W %s", r_s, w_s);
+        grid_print(x + 2, cur_y, w - 4, line3, t->dim, false, false);
+    }
 }
 
 // -------------------------------------------------------------
@@ -450,7 +838,7 @@ void ui_render(UIState *state, const SystemTelemetry *telem, const Theme *t) {
     // 1. TOP HEADER BAR
     // ==========================================
     char hdr_left[256];
-    snprintf(hdr_left, sizeof(hdr_left), "macpulse • %s • %dC (%dE+%dP) • %d GPU • v1.0.0",
+    snprintf(hdr_left, sizeof(hdr_left), "◈ MacPulse • %s • %d Cores (%dE+%dP) • %d GPU • v1.0.0",
              telem->chip_name, telem->total_cores, telem->e_cores, telem->p_cores, telem->gpu_cores);
 
     time_t raw_time = time(NULL);
@@ -468,7 +856,6 @@ void ui_render(UIState *state, const SystemTelemetry *telem, const Theme *t) {
                  telem->thermal_state_str, telem->uptime_str, time_str);
     }
 
-    // Fill header row background
     for (int c = 0; c < W; c++) {
         grid_set(c, 0, " ", t->header_fg, t->header_bg, true, false, false);
     }
@@ -479,247 +866,174 @@ void ui_render(UIState *state, const SystemTelemetry *telem, const Theme *t) {
     }
 
     // ==========================================
-    // 2. LAYOUT SPLIT (SIDEBAR LEFT + PROCESS RIGHT)
+    // 2. 4 MAIN FEATURE CARDS
+    //    [CPU MONITOR] [GPU & VRAM] [UNIFIED MEMORY] [NETWORK SPEED]
     // ==========================================
-    int side_w = 46;
-    if (W < 95) {
-        side_w = W * 45 / 100;
-        if (side_w < 38) side_w = 38;
+    int card_h = 6;
+    int card_bottom_y = 1;
+
+    if (W >= 108) {
+        // 4 Columns side-by-side
+        int col_w = W / 4;
+        draw_cpu_card(0, 1, col_w, card_h, telem, t);
+        draw_gpu_card(col_w, 1, col_w, card_h, telem, t);
+        draw_mem_card(col_w * 2, 1, col_w, card_h, telem, t);
+        draw_net_card(col_w * 3, 1, W - col_w * 3, card_h, telem, t);
+        card_bottom_y = 1 + card_h;
+    } else {
+        // 2x2 Grid of Cards
+        int half_w = W / 2;
+        int rem_w = W - half_w;
+        draw_cpu_card(0, 1, half_w, card_h, telem, t);
+        draw_gpu_card(half_w, 1, rem_w, card_h, telem, t);
+        draw_mem_card(0, 1 + card_h, half_w, card_h, telem, t);
+        draw_net_card(half_w, 1 + card_h, rem_w, card_h, telem, t);
+        card_bottom_y = 1 + card_h * 2;
     }
-    if (side_w > W - 30) side_w = W - 30;
 
-    int proc_x = side_w;
-    int proc_w = W - side_w;
-    int main_h = H - 2; // Rows 1 .. H-2
-    int start_y = 1;
+    // ==========================================
+    // 3. GRAPHICAL HISTORY SECTION (TTYPLOT REFERENCE)
+    // ==========================================
+    int total_avail = (H - 1) - card_bottom_y;
+    if (total_avail < 6) total_avail = 6;
 
-    // ------------------------------------------
-    // LEFT SIDEBAR: HARDWARE TELEMETRY
-    // ------------------------------------------
-    grid_box(0, start_y, side_w, main_h, NULL, NULL, t->border, t->title, t->accent);
+    bool show_process_table = state->show_procs && (state->view_mode != VIEW_ZEN) && (total_avail >= 16);
 
-    int cur_y = start_y;
-
-    // 1. GPU USAGE
-    char gpu_title[64];
-    snprintf(gpu_title, sizeof(gpu_title), "GPU Usage: %.0f%% (%.0f°C)", telem->gpu_device_pct, telem->gpu_temp_avg);
-    grid_divider(0, cur_y, side_w, gpu_title, NULL, t->border, t->title, t->accent);
-    cur_y++;
-
-    // GPU Bar
-    grid_bar(2, cur_y, side_w - 10, telem->gpu_device_pct, t->gpu_color, t->dim, t->text);
-    cur_y++;
-
-    // GPU History Graph (sparkline)
-    int gpu_graph_h = 2;
-    grid_sparkline(2, cur_y, side_w - 4, gpu_graph_h,
-                   telem->history_gpu, telem->history_gpu_count, 100.0f,
-                   t->gpu_color, t->crit, t->dim);
-    cur_y += gpu_graph_h;
-
-    // GPU VRAM
-    char in_vram[32], alloc_vram[32];
-    format_bytes(telem->gpu_in_use_bytes, in_vram, sizeof(in_vram));
-    format_bytes(telem->gpu_alloc_bytes, alloc_vram, sizeof(alloc_vram));
-    char vram_buf[64];
-    snprintf(vram_buf, sizeof(vram_buf), "VRAM: %s / %s (Renderer: %.0f%%)", in_vram, alloc_vram, telem->gpu_renderer_pct);
-    grid_print(2, cur_y, side_w - 4, vram_buf, t->dim, false, false);
-    cur_y++;
-
-    // 2. CPU USAGE
-    char cpu_title[64];
-    snprintf(cpu_title, sizeof(cpu_title), "CPU Usage: %dC (%dE/%dP) %.1f%% (%.0f°C)",
-             telem->total_cores, telem->e_cores, telem->p_cores, telem->cpu_total_pct, telem->cpu_temp_avg);
-    grid_divider(0, cur_y, side_w, cpu_title, NULL, t->border, t->title, t->accent);
-    cur_y++;
-
-    // CPU Bar
-    grid_bar(2, cur_y, side_w - 10, telem->cpu_total_pct, t->cpu_color, t->dim, t->text);
-    cur_y++;
-
-    // E-Cores
-    char e_buf[128] = "E-Cores: ";
-    for (int i = 0; i < telem->e_cores && i < 6; i++) {
-        char tmp[24];
-        snprintf(tmp, sizeof(tmp), "E%d:%2.0f%% ", i, telem->core_pct[telem->p_cores + i]);
-        strcat(e_buf, tmp);
+    int graph_y = card_bottom_y;
+    int graph_h = show_process_table ? (total_avail * 58 / 100) : total_avail;
+    if (graph_h < 7) graph_h = 7;
+    if (show_process_table && (total_avail - graph_h < 6)) {
+        graph_h = total_avail - 6;
     }
-    grid_print(2, cur_y, side_w - 4, e_buf, t->dim, false, false);
-    cur_y++;
 
-    // P-Cores
-    char p_buf[128] = "P-Cores: ";
-    for (int i = 0; i < telem->p_cores && i < 6; i++) {
-        char tmp[24];
-        snprintf(tmp, sizeof(tmp), "P%d:%2.0f%% ", i, telem->core_pct[i]);
-        strcat(p_buf, tmp);
-    }
-    grid_print(2, cur_y, side_w - 4, p_buf, t->dim, false, false);
-    cur_y++;
-
-    // CPU Sparkline Graph
-    int cpu_graph_h = 2;
-    grid_sparkline(2, cur_y, side_w - 4, cpu_graph_h,
-                   telem->history_cpu, telem->history_cpu_count, 100.0f,
-                   t->cpu_color, t->crit, t->dim);
-    cur_y += cpu_graph_h;
-
-    // Load average
-    char load_buf[64];
-    snprintf(load_buf, sizeof(load_buf), "Load: %.2f %.2f %.2f (Usr: %.1f%% Sys: %.1f%%)",
-             telem->load_avg[0], telem->load_avg[1], telem->load_avg[2],
-             telem->cpu_user_pct, telem->cpu_sys_pct);
-    grid_print(2, cur_y, side_w - 4, load_buf, t->dim, false, false);
-    cur_y++;
-
-    // 3. UNIFIED MEMORY
-    char mem_used_str[32], mem_tot_str[32];
-    format_bytes(telem->mem_used_bytes, mem_used_str, sizeof(mem_used_str));
-    format_bytes(telem->mem_total_bytes, mem_tot_str, sizeof(mem_tot_str));
-    char mem_title[64];
-    snprintf(mem_title, sizeof(mem_title), "Unified Memory: %s / %s", mem_used_str, mem_tot_str);
-    grid_divider(0, cur_y, side_w, mem_title, NULL, t->border, t->title, t->accent);
-    cur_y++;
-
-    // RAM Bar
-    grid_bar(2, cur_y, side_w - 10, telem->mem_used_pct, t->mem_color, t->dim, t->text);
-    cur_y++;
-
-    // App / Wired / Compressed
-    char app_str[32], wired_str[32], comp_str[32];
-    format_bytes(telem->mem_active_bytes, app_str, sizeof(app_str));
-    format_bytes(telem->mem_wired_bytes, wired_str, sizeof(wired_str));
-    format_bytes(telem->mem_compressed_bytes, comp_str, sizeof(comp_str));
-    char mem_det1[64];
-    snprintf(mem_det1, sizeof(mem_det1), "App: %s | Wired: %s | Comp: %s", app_str, wired_str, comp_str);
-    grid_print(2, cur_y, side_w - 4, mem_det1, t->dim, false, false);
-    cur_y++;
-
-    // Cache & Free & Swap
-    char cache_str[32], free_str[32], swap_str[32];
-    format_bytes(telem->mem_inactive_bytes, cache_str, sizeof(cache_str));
-    format_bytes(telem->mem_free_bytes, free_str, sizeof(free_str));
-    format_bytes(telem->swap_used_bytes, swap_str, sizeof(swap_str));
-    char mem_det2[64];
-    snprintf(mem_det2, sizeof(mem_det2), "Cache: %s | Free: %s | Swap: %s", cache_str, free_str, swap_str);
-    grid_print(2, cur_y, side_w - 4, mem_det2, t->dim, false, false);
-    cur_y++;
-
-    // 4. NETWORK & DISK
-    grid_divider(0, cur_y, side_w, "Network & Disk", NULL, t->border, t->title, t->accent);
-    cur_y++;
-
-    // Net speeds
-    char down_s[32], up_s[32];
-    format_speed(telem->net_download_bps, down_s, sizeof(down_s));
-    format_speed(telem->net_upload_bps, up_s, sizeof(up_s));
-    char net_str[64];
-    snprintf(net_str, sizeof(net_str), "Net:  ▼ %-9s ▲ %-9s", down_s, up_s);
-    grid_print(2, cur_y, side_w - 4, net_str, t->accent, false, false);
-    cur_y++;
-
-    // Disk I/O
-    char read_s[32], write_s[32];
-    format_speed(telem->disk_read_bps, read_s, sizeof(read_s));
-    format_speed(telem->disk_write_bps, write_s, sizeof(write_s));
-    char disk_io[64];
-    snprintf(disk_io, sizeof(disk_io), "Disk: R %-9s W %-9s", read_s, write_s);
-    grid_print(2, cur_y, side_w - 4, disk_io, t->dim, false, false);
-    cur_y++;
-
-    // Storage HD
-    char disk_u[32], disk_t[32], disk_f[32];
-    format_bytes(telem->disk_used_bytes, disk_u, sizeof(disk_u));
-    format_bytes(telem->disk_total_bytes, disk_t, sizeof(disk_t));
-    format_bytes(telem->disk_free_bytes, disk_f, sizeof(disk_f));
-    char hd_str[64];
-    snprintf(hd_str, sizeof(hd_str), "Mac HD: %s/%s (%s free)", disk_u, disk_t, disk_f);
-    grid_print(2, cur_y, side_w - 4, hd_str, t->dim, false, false);
-    cur_y++;
-
-    // 5. APPLE SILICON SPECS (if space permits)
-    if (cur_y < start_y + main_h - 2) {
-        grid_divider(0, cur_y, side_w, "Apple Silicon", NULL, t->border, t->title, t->accent);
-        cur_y++;
-        char soc_str[64];
-        snprintf(soc_str, sizeof(soc_str), "%s (%d Cores, %d GPU Cores)", telem->chip_name, telem->total_cores, telem->gpu_cores);
-        grid_print(2, cur_y, side_w - 4, soc_str, t->title, true, false);
-        cur_y++;
-        if (cur_y < start_y + main_h - 1) {
-            char therm_str[64];
-            snprintf(therm_str, sizeof(therm_str), "SoC Max: %.1f°C | SSD: %.1f°C | Batt: %.1f°C",
-                     telem->soc_temp_max, telem->ssd_temp, telem->battery_temp);
-            grid_print(2, cur_y, side_w - 4, therm_str, t->dim, false, false);
+    switch (state->graph_mode) {
+        case GRAPH_MODE_SPLIT: {
+            if (W >= 90) {
+                int left_w = W / 2;
+                int right_w = W - left_w;
+                grid_ttyplot(0, graph_y, left_w, graph_h,
+                             "CPU USAGE HISTORY", "Apple Silicon Cores",
+                             telem->history_cpu, telem->history_cpu_count,
+                             100.0f, "%", t->cpu_color, t);
+                grid_ttyplot(left_w, graph_y, right_w, graph_h,
+                             "GPU USAGE HISTORY", "IOAccelerator",
+                             telem->history_gpu, telem->history_gpu_count,
+                             100.0f, "%", t->gpu_color, t);
+            } else {
+                int gh1 = graph_h / 2;
+                int gh2 = graph_h - gh1;
+                grid_ttyplot(0, graph_y, W, gh1,
+                             "CPU USAGE HISTORY", NULL,
+                             telem->history_cpu, telem->history_cpu_count,
+                             100.0f, "%", t->cpu_color, t);
+                grid_ttyplot(0, graph_y + gh1, W, gh2,
+                             "GPU USAGE HISTORY", NULL,
+                             telem->history_gpu, telem->history_gpu_count,
+                             100.0f, "%", t->gpu_color, t);
+            }
+            break;
+        }
+        case GRAPH_MODE_STACKED: {
+            int gh1 = graph_h / 2;
+            int gh2 = graph_h - gh1;
+            grid_ttyplot(0, graph_y, W, gh1,
+                         "CPU USAGE HISTORY", "Apple Silicon Cores",
+                         telem->history_cpu, telem->history_cpu_count,
+                         100.0f, "%", t->cpu_color, t);
+            grid_ttyplot(0, graph_y + gh1, W, gh2,
+                         "GPU USAGE HISTORY", "IOAccelerator",
+                         telem->history_gpu, telem->history_gpu_count,
+                         100.0f, "%", t->gpu_color, t);
+            break;
+        }
+        case GRAPH_MODE_COMBINED: {
+            grid_ttyplot_dual(0, graph_y, W, graph_h,
+                              "CPU & GPU USAGE DUAL-SERIES HISTORY", "█ CPU • GPU",
+                              telem->history_cpu, telem->history_cpu_count, "CPU", t->cpu_color,
+                              telem->history_gpu, telem->history_gpu_count, "GPU", t->gpu_color,
+                              100.0f, "%", t);
+            break;
+        }
+        case GRAPH_MODE_NET: {
+            grid_ttyplot_dual(0, graph_y, W, graph_h,
+                              "NETWORK BANDWIDTH THROUGHPUT HISTORY", "▼ Down • Up",
+                              telem->history_net_down, telem->history_net_count, "Down", t->accent,
+                              telem->history_net_up, telem->history_net_count, "Up", t->warn,
+                              0.0f, "KB/s", t);
+            break;
         }
     }
 
-    // ------------------------------------------
-    // RIGHT PANEL: PROCESS LIST / ACTIVITY MONITOR
-    // ------------------------------------------
-    char proc_title[64];
-    if (state->search_buf[0]) {
-        snprintf(proc_title, sizeof(proc_title), "Process List (%d/%d, /:\"%s\")",
-                 telem->procs.filtered_count, telem->procs.count, state->search_buf);
-    } else {
-        snprintf(proc_title, sizeof(proc_title), "Process List (%d processes)", telem->procs.count);
-    }
-    grid_box(proc_x, start_y, proc_w, main_h, proc_title, "↑/↓ scroll, / search, x kill",
-             t->border, t->title, t->dim);
-
-    // Column Header
-    int tbl_y = start_y + 1;
-    char col_hdr[256];
-    snprintf(col_hdr, sizeof(col_hdr), "%-6s  %-12s  %-8s  %5s  %5s  %5s  %-6s  %s",
-             "PID", "USER", "RES", "%CPU", "%GPU", "%MEM", "TIME", "COMMAND");
-    grid_print(proc_x + 2, tbl_y, proc_w - 4, col_hdr, t->accent, true, false);
-
-    // Process rows
-    int avail_rows = main_h - 3;
-    if (avail_rows < 1) avail_rows = 1;
-
-    if (state->proc_selected < 0) state->proc_selected = 0;
-    if (state->proc_selected >= telem->procs.filtered_count) {
-        state->proc_selected = telem->procs.filtered_count > 0 ? telem->procs.filtered_count - 1 : 0;
-    }
-    if (state->proc_selected < state->proc_scroll) {
-        state->proc_scroll = state->proc_selected;
-    }
-    if (state->proc_selected >= state->proc_scroll + avail_rows) {
-        state->proc_scroll = state->proc_selected - avail_rows + 1;
-    }
-
-    for (int r = 0; r < avail_rows; r++) {
-        int idx = state->proc_scroll + r;
-        int row_y = tbl_y + 1 + r;
-
-        if (idx < telem->procs.filtered_count) {
-            int p_idx = telem->procs.filtered_indices[idx];
-            const ProcessEntry *pe = &telem->procs.items[p_idx];
-
-            char res_str[16], time_s[16];
-            format_bytes(pe->mem_bytes, res_str, sizeof(res_str));
-            format_time_sec(pe->cpu_time_sec, time_s, sizeof(time_s));
-
-            char row_line[512];
-            snprintf(row_line, sizeof(row_line), "%-6d  %-12.12s  %-8s  %4.1f%%  %4.1f%%  %4.1f%%  %-6s  %s",
-                     pe->pid, pe->username, res_str, pe->cpu_pct, pe->gpu_pct, pe->mem_pct, time_s, pe->name);
-
-            bool is_sel = (idx == state->proc_selected);
-            if (is_sel) {
-                // Fill entire row with selection background
-                for (int c = proc_x + 1; c < proc_x + proc_w - 1; c++) {
-                    grid_set(c, row_y, " ", t->proc_sel_fg, t->proc_sel_bg, true, false, false);
-                }
-                grid_print_bg(proc_x + 2, row_y, proc_w - 4, row_line, t->proc_sel_fg, t->proc_sel_bg, true);
+    // ==========================================
+    // 4. BOTTOM ACTIVITY MONITOR (PROCESS TABLE)
+    // ==========================================
+    if (show_process_table) {
+        int proc_y = graph_y + graph_h;
+        int proc_h = (H - 1) - proc_y;
+        if (proc_h >= 4) {
+            char proc_title[64];
+            if (state->search_buf[0]) {
+                snprintf(proc_title, sizeof(proc_title), "ACTIVITY MONITOR (%d/%d, /:\"%s\")",
+                         telem->procs.filtered_count, telem->procs.count, state->search_buf);
             } else {
-                ColorRGB cpu_col = (pe->cpu_pct > 50.0f) ? t->crit : (pe->cpu_pct > 15.0f ? t->warn : t->text);
-                grid_print(proc_x + 2, row_y, proc_w - 4, row_line, cpu_col, false, false);
+                snprintf(proc_title, sizeof(proc_title), "ACTIVITY MONITOR (%d processes)", telem->procs.count);
+            }
+            grid_box(0, proc_y, W, proc_h, proc_title, "↑/↓ scroll, / search, x kill, Tab toggle",
+                     t->border, t->title, t->dim);
+
+            int tbl_y = proc_y + 1;
+            char col_hdr[256];
+            snprintf(col_hdr, sizeof(col_hdr), "%-6s  %-12s  %-9s  %5s  %5s  %5s  %-7s  %s",
+                     "PID", "USER", "RES", "%CPU", "%GPU", "%MEM", "TIME", "COMMAND");
+            grid_print(2, tbl_y, W - 4, col_hdr, t->accent, true, false);
+
+            int avail_rows = proc_h - 3;
+            if (avail_rows < 1) avail_rows = 1;
+
+            if (state->proc_selected < 0) state->proc_selected = 0;
+            if (state->proc_selected >= telem->procs.filtered_count) {
+                state->proc_selected = telem->procs.filtered_count > 0 ? telem->procs.filtered_count - 1 : 0;
+            }
+            if (state->proc_selected < state->proc_scroll) {
+                state->proc_scroll = state->proc_selected;
+            }
+            if (state->proc_selected >= state->proc_scroll + avail_rows) {
+                state->proc_scroll = state->proc_selected - avail_rows + 1;
+            }
+
+            for (int r = 0; r < avail_rows; r++) {
+                int idx = state->proc_scroll + r;
+                int row_y = tbl_y + 1 + r;
+
+                if (idx < telem->procs.filtered_count) {
+                    int p_idx = telem->procs.filtered_indices[idx];
+                    const ProcessEntry *pe = &telem->procs.items[p_idx];
+
+                    char res_str[16], time_s[16];
+                    format_bytes(pe->mem_bytes, res_str, sizeof(res_str));
+                    format_time_sec(pe->cpu_time_sec, time_s, sizeof(time_s));
+
+                    char row_line[512];
+                    snprintf(row_line, sizeof(row_line), "%-6d  %-12.12s  %-9s  %4.1f%%  %4.1f%%  %4.1f%%  %-7s  %s",
+                             pe->pid, pe->username, res_str, pe->cpu_pct, pe->gpu_pct, pe->mem_pct, time_s, pe->name);
+
+                    bool is_sel = (idx == state->proc_selected);
+                    if (is_sel) {
+                        for (int c = 1; c < W - 1; c++) {
+                            grid_set(c, row_y, " ", t->proc_sel_fg, t->proc_sel_bg, true, false, false);
+                        }
+                        grid_print_bg(2, row_y, W - 4, row_line, t->proc_sel_fg, t->proc_sel_bg, true);
+                    } else {
+                        ColorRGB cpu_col = (pe->cpu_pct > 50.0f) ? t->crit : (pe->cpu_pct > 15.0f ? t->warn : t->text);
+                        grid_print(2, row_y, W - 4, row_line, cpu_col, false, false);
+                    }
+                }
             }
         }
     }
 
     // ==========================================
-    // 3. BOTTOM FOOTER / SHORTCUT BAR
+    // 5. BOTTOM FOOTER / SHORTCUT BAR
     // ==========================================
     int foot_y = H - 1;
     for (int c = 0; c < W; c++) {
@@ -732,7 +1046,12 @@ void ui_render(UIState *state, const SystemTelemetry *telem, const Theme *t) {
     } else if (time(NULL) - state->status_msg_time < 3 && state->status_msg[0]) {
         snprintf(ftr, sizeof(ftr), " %s", state->status_msg);
     } else {
-        snprintf(ftr, sizeof(ftr), " [q] Exit  [t] Themes  [c] CPU  [m] Mem  [p] PID  [n] Name  [/] Search  [x] Kill  [+/-] Rate: %.1fs",
+        const char *g_mode_str = (state->graph_mode == GRAPH_MODE_SPLIT) ? "Split" :
+                                 ((state->graph_mode == GRAPH_MODE_STACKED) ? "Stack" :
+                                 ((state->graph_mode == GRAPH_MODE_COMBINED) ? "Dual" : "Net"));
+        snprintf(ftr, sizeof(ftr), " [q]Exit [t]Themes [g]Graphs:%s [Tab]%s [c]CPU [m]Mem [p]PID [/]Search [x]Kill [+/-]%.1fs",
+                 g_mode_str,
+                 show_process_table ? "HideProcs" : "ShowProcs",
                  (float)state->refresh_ms / 1000.0f);
     }
     grid_print_bg(1, foot_y, W - 2, ftr, t->header_fg, t->header_bg, true);
@@ -779,8 +1098,8 @@ void ui_render(UIState *state, const SystemTelemetry *telem, const Theme *t) {
             }
         }
     } else if (state->modal == MODAL_HELP) {
-        int m_w = 66;
-        int m_h = 19;
+        int m_w = 68;
+        int m_h = 22;
         int m_x = (W - m_w) / 2;
         int m_y = (H - m_h) / 2;
 
@@ -792,9 +1111,11 @@ void ui_render(UIState *state, const SystemTelemetry *telem, const Theme *t) {
             "  q, Ctrl+C       Quit MacPulse",
             "  t               Open Theme Customizer Modal",
             "  T (Shift+T)     Instantly cycle to next theme",
+            "  g               Cycle Graph Modes (Split / Stack / Dual / Net)",
+            "  Tab             Toggle Process Table / Maximize Graphs",
             "  Up / Down, j/k  Scroll Activity Monitor process table",
             "  /               Search and filter processes by name or user",
-            "  Escape          Clear search / Close modal",
+            "  Escape          Clear search / Close active modal",
             "",
             "SORTING PROCESSES:",
             "  c               Sort processes by %CPU usage (descending)",
@@ -808,9 +1129,9 @@ void ui_render(UIState *state, const SystemTelemetry *telem, const Theme *t) {
             "  + / -           Speed up / slow down refresh rate (0.2s - 5s)",
             "  h, ?            Toggle this Help dialog"
         };
-        for (int i = 0; i < 17; i++) {
+        for (int i = 0; i < 20; i++) {
             grid_print(m_x + 3, m_y + 1 + i, m_w - 6, help_lines[i],
-                       (i == 0 || i == 8 || i == 14) ? t->accent : t->text, (i == 0 || i == 8 || i == 14), false);
+                       (i == 0 || i == 9 || i == 16) ? t->accent : t->text, (i == 0 || i == 9 || i == 16), false);
         }
     } else if (state->modal == MODAL_KILL_CONFIRM) {
         int m_w = 54;

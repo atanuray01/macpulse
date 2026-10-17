@@ -40,31 +40,36 @@
 
 ## 📸 Dashboard Layout Overview
 
-MacPulse organizes your entire Mac's telemetry into a single, unified, high-density terminal dashboard:
+MacPulse organizes your Mac's telemetry into a unified, high-density dashboard featuring **CPU, GPU, Unified Memory, and Network Speed** readings alongside **authentic ttyplot-style graphical history plots**:
 
 ```
-◈ MacPulse v1.0.0 │ Apple M4 (10 Cores: 4P + 6E) │ Mac16,12   ⚡ 89% │ Nominal │ Up: 4d 2h │ 13:30:00
-╭─ CPU MONITOR 34.8°C (Peak: 35.6°C) ─────────────────╮╭─ GPU & THERMAL 33.6°C (SoC: 36.4°C) ─────────────────╮
-│ Total: ████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░   12.4% ││ Device: ██████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░   20.0% │
-│ User:  8.0% Sys:  4.4% Idle: 87.6% Load: 1.82 1.65 ││ Renderer: 20.0% Tiler: 20.0% VRAM: 512 MB / 1.69 GB │
-│ P-Cores: 0:18% 1:12% 2: 8% 3:15%                    ││ Thermal: [Nominal] SSD: 34.0°C Battery: 32.0°C        │
-│ E-Cores: 0: 4% 1: 2% 2: 1% 3: 5% 4: 2% 5: 3%        ││ GPU Load Rolling History Graph:                       │
-│    ▂▃▅▄▃▂ ▂▃▅▆▇█▇▆▅▄▃▂  ▂▃▄▅▆▇▆▅▄▃▂                 ││    ▂▃▄▅▄▃▂  ▂▃▄▅▆▇▆▅▄▃▂  ▂▃▄▅▆▇▆▅▄▃▂                 │
-╰─────────────────────────────────────────────────────╯╰─────────────────────────────────────────────────────╯
-╭─ UNIFIED MEMORY 8.41 GB / 16.00 GB (52.6%) ─────────╮╭─ NETWORK SPEED ▼  1.24 MB/s  ▲ 240.5 KB/s ───────────╮
-│ RAM:  █████████████████░░░░░░░░░░░░░░░░░  52.6%      ││ Download: ▼  1.24 MB/s  Upload: ▲ 240.5 KB/s          │
-│ App Memory:   5.30 GB   Wired Memory: 1.65 GB       ││ Total In:  3.68 GB      Total Out: 481.31 MB        │
-│ Cached Files: 5.27 GB   Compressed:   1.47 GB       ││ Bandwidth Rolling Graph:                              │
-│ Breakdown: [App: 5.30 GB] [Wired: 1.65 GB] [Comp...] ││    ▂▃▅▆▇█▇▆▅▄▃▂  ▂▃▄▅▆▇▆▅▄▃▂  ▂▃▄▅▆▇▆▅▄▃▂             │
-╰─────────────────────────────────────────────────────╯╰─────────────────────────────────────────────────────╯
-╭─ ACTIVITY MONITOR 477 processes ─────────────────────────────────────────────────────────────────────────────╮
-│ PID     USER           %CPU     %MEM     RESIDENT     STATE    COMMAND                                       │
-│ 11405   atanuray       14.2%     1.9%    305.23 MB    RUN      python3.14                                    │
-│ 11709   atanuray        8.5%    10.2%      1.63 GB    RUN      com.apple.WebKit.WebContent                   │
-│ 639     atanuray        1.2%     0.6%     94.41 MB    RUN      ControlCenter                                 │
-│ 645     atanuray        0.8%     0.7%    120.23 MB    RUN      Finder                                        │
-╰─────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
- [q]Quit [t]Theme [c]CPU [m]Mem [p]PID [n]Name [/]Filter [x]Kill [h]Help [+/-]1.0s
+◈ MacPulse • Apple M4 • 10 Cores (6E+4P) • 8 GPU • v1.0.0            ⚡ 89% • Nominal • Up: 4d 2h • 16:50:00
+┌─ CPU MONITOR • 34.0°C ─────┐┌─ GPU & VRAM ───────────────┐┌─ UNIFIED MEMORY ───────────┐┌─ NETWORK SPEED ────────────┐
+│ [||||...............]  18% ││ [||.................]  12% ││ [|||||||||.........]  53%  ││ Download: ▼  3.42 MB/s     │
+│ User: 12%  Sys:  6%        ││ Renderer: 12%  Tiler:  4%  ││ App: 5.2GB  Wired: 1.8GB   ││ Upload:   ▲ 480.2 KB/s     │
+│ Load: 1.64 1.52 1.48       ││ VRAM: 335.3MB / 1.3GB      ││ Comp: 1.6GB  Cache: 5.0GB  ││ In: 14.2GB  Out: 2.4GB     │
+│ 10 Cores (6E + 4P)         ││ 8 GPU Cores • Metal 3      ││ Free: 1.9GB  Swap: 0B      ││ Disk IO: R 16KB/s W 4KB/s   │
+└────────────────────────────┘└────────────────────────────┘└────────────────────────────┘└────────────────────────────┘
+┌─ CPU USAGE HISTORY • Apple Silicon Cores ────────────────┐┌─ GPU USAGE HISTORY • IOAccelerator ────────────────────┐
+│ ^ 100 %                                                  ││ ^ 100 %                                                  │
+│ |                                                        ││ |                                                        │
+│ |  75 %    . . . . . . . . . . . . . . . . . . . . . . . ││ |  75 %    . . . . . . . . . . . . . . . . . . . . . . . │
+│ |                                           █            ││ |                                                        │
+│ |  50 %    . . . . . . . . . . . . . . . . ▄ █           ││ |  50 %    . . . . . . . . . . . . . . . . . . . . . . . │
+│ |                                      ▄ █ █ █ █         ││ |                                           ▄ █          │
+│ |  25 %    . . . . . . . . . . . . . ▄ █ █ █ █ █ █       ││ |  25 %    . . . . . . . . . . . . . . . . ▄ █ █ █       │
+│ |                                ▄ █ █ █ █ █ █ █ █ █     ││ |                                      ▄ █ █ █ █ █ █     │
+│ +------------------------------------------------------->││ +------------------------------------------------------->│
+│ | last=18.4 min= 3.2 max=88.5 avg=21.6 %     ttyplot 1.0 ││ | last=12.0 min= 0.0 max=42.0 avg= 9.4 %     ttyplot 1.0 │
+└──────────────────────────────────────────────────────────┘└──────────────────────────────────────────────────────────┘
+┌─ ACTIVITY MONITOR (494 processes) • ↑/↓ scroll, / search, x kill, Tab toggle ────────────────────────────────────────┐
+│ PID     USER          RES         %CPU   %GPU   %MEM  TIME     COMMAND                                               │
+│ 38579   atanuray      678.1MB     14.2%  0.0%   4.1%  0m02s    Antigravity IDE Helper                                │
+│ 11709   atanuray      1.63GB       8.5% 10.2%   10.2% 1m45s    com.apple.WebKit.WebContent                           │
+│ 639     atanuray      67.2MB       1.2%  0.0%   0.4%  0m09s    ControlCenter                                         │
+│ 645     atanuray      120.2MB      0.8%  0.0%   0.7%  0m04s    Finder                                                │
+└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+ [q]Exit [t]Themes [g]Graphs:Split [Tab]HideProcs [c]CPU [m]Mem [p]PID [/]Search [x]Kill [+/-]1.0s
 ```
 
 ---
@@ -110,6 +115,9 @@ Run MacPulse immediately:
 | **`q`** / **`Ctrl+C`** | **Quit** | Cleanly restores terminal and exits |
 | **`t`** | **Theme Picker** | Opens interactive Theme Customizer popup with live swatches |
 | **`T`** | **Cycle Themes** | Instantly cycles to the next color theme |
+| **`g`** | **Graph Mode** | Cycles ttyplot graph modes: **Split** (CPU/GPU) → **Stacked** → **Dual-Series** → **Net Throughput** |
+| **`Tab`** | **Toggle Procs** | Toggles the Process Table on/off to maximize the graphical history plots |
+| **`v`** | **View Mode** | Cycles view layout modes (**Full Dashboard** → **Compact** → **Zen Graphs**) |
 | **`c`** | **Sort %CPU** | Sorts process table by %CPU (descending) |
 | **`m`** | **Sort %MEM** | Sorts process table by Memory usage (descending) |
 | **`p`** | **Sort PID** | Sorts process table by Process ID |

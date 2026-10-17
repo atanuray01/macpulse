@@ -6,7 +6,7 @@
 #include <sys/types.h>
 
 #define MAX_CORES 128
-#define HISTORY_LEN 120
+#define HISTORY_LEN 240
 #define MAX_PROCESSES 1024
 
 typedef struct {
@@ -82,6 +82,8 @@ typedef struct {
     uint64_t swap_total_bytes;
     uint64_t swap_used_bytes;
     float mem_used_pct;
+    float history_mem[HISTORY_LEN];
+    int history_mem_count;
 
     // Network Telemetry
     uint64_t net_download_bps;
