@@ -55,9 +55,11 @@ static void cleanup_and_exit(int code) {
 static void save_user_config(const char *theme_name, int refresh_ms, ViewMode view_mode) {
     const char *home = getenv("HOME");
     if (!home) return;
-    char dir[512], file[512];
+    char config_root[512], dir[512], file[512];
+    snprintf(config_root, sizeof(config_root), "%s/.config", home);
     snprintf(dir, sizeof(dir), "%s/.config/macpulse", home);
     snprintf(file, sizeof(file), "%s/.config/macpulse/config.json", home);
+    mkdir(config_root, 0755);
     mkdir(dir, 0755);
 
     const char *v_str = "full";
@@ -70,6 +72,8 @@ static void save_user_config(const char *theme_name, int refresh_ms, ViewMode vi
         case VIEW_GPU:      v_str = "gpu"; break;
         case VIEW_MEM:      v_str = "mem"; break;
         case VIEW_NET:      v_str = "net"; break;
+        case VIEW_BENTO:    v_str = "bento"; break;
+        case VIEW_RAIL:     v_str = "rail"; break;
         default:            v_str = "full"; break;
     }
 
@@ -156,7 +160,7 @@ static void print_usage(const char *prog) {
     printf("Options:\n");
     printf("  -t, --theme <name>     Select color theme on launch (e.g. matrix, cyberpunk, dracula, nord)\n");
     printf("  -r, --rate <seconds>   Set refresh rate in seconds (default: 1.0, min: 0.2)\n");
-    printf("  -V, --view, --layout   Set dashboard layout (full, compact, zen, overview, cpu, gpu, mem, net)\n");
+    printf("  -V, --view, --layout   Set dashboard layout (full, compact, zen, overview, cpu, gpu, mem, net, bento, rail)\n");
     printf("  -l, --list-themes      List all available built-in and custom themes (15 themes)\n");
     printf("  -h, --help             Show this help message\n");
     printf("  -v, --version          Show version information\n\n");
@@ -166,7 +170,7 @@ static void print_usage(const char *prog) {
     printf("  T                      Instantly cycle to next theme\n");
     printf("  g                      Cycle Graph modes (Split CPU/GPU, Stacked, Dual-Series, Network)\n");
     printf("  Tab                    Toggle Process Table / Maximize Graphs\n");
-    printf("  v                      Cycle View modes (Full, Compact, Zen, Overview, CPU, GPU, Memory, Network)\n");
+    printf("  v                      Cycle all 10 full-screen dashboard layouts\n");
     printf("  c / m / p / n          Sort processes by CPU%% / Memory / PID / Name\n");
     printf("  r                      Reverse sort order\n");
     printf("  /                      Search / filter processes by name or user\n");

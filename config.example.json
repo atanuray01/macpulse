@@ -1,6 +1,7 @@
 {
   "theme": "Cyberpunk 2077",
   "refresh_rate_seconds": 1.0,
+  "view_mode": "bento",
   "sort_by": "cpu",
   "reverse_sort": false,
   "custom_theme_dir": "~/.config/macpulse/themes",

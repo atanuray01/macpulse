@@ -22,6 +22,8 @@ typedef enum {
   VIEW_GPU,
   VIEW_MEM,
   VIEW_NET,
+  VIEW_BENTO,
+  VIEW_RAIL,
   VIEW_COUNT
 } ViewMode;
 

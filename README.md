@@ -1,7 +1,7 @@
 # MacPulse ◈
 
 > **Ultra-Fast, Real-Time Apple Silicon & Mac System Monitor & Dashboard for Terminal**
-> *Sudo-free native telemetry, rolling graphs, unified memory breakdown, interactive activity monitor, 8 layout presets & 15 pro color themes.*
+> *Sudo-free native telemetry, rolling graphs, unified memory breakdown, interactive activity monitor, 10 full-screen layout presets & 15 pro color themes.*
 
 ---
 
@@ -33,7 +33,7 @@
 | **Unified Memory Breakdown** | ⚠️ Basic | ⚠️ Standard RAM | **✅ App, Wired, Compressed, Cache, Swap** |
 | **Network Speed & Disk I/O** | ❌ None | ⚠️ Basic | **✅ Live ▼ Down / ▲ Up + Read/Write Rates** |
 | **Activity Monitor / Process Table** | ❌ None | ✅ Yes | **✅ Live %CPU, %MEM, %GPU, Search & Kill** |
-| **Dashboard Layout Presets** | 1 View | 1 View | **✅ 8 Focused Views (Full, CPU, GPU, Net...)** |
+| **Dashboard Layout Presets** | 1 View | 1 View | **✅ 10 Full-Screen Views (Full, Bento, Rail, CPU...)** |
 | **Theme Customization** | ❌ Minimal | ⚠️ Fixed Palettes | **✅ 15 Pro Themes + Live Modal + JSON** |
 | **Zero-Flicker Double Buffering** | ⚠️ Curses | ⚠️ Redraws | **✅ Atomic Double-Buffered Frames** |
 | **Binary Footprint & CPU Usage** | ~15MB | ~25MB | **< 1MB binary, < 0.3% CPU usage** |
@@ -57,18 +57,19 @@ Supporting Linux or Windows would require entirely separate telemetry engines (e
 
 ---
 
-## 📸 Dashboard Layout Presets (8 Views)
+## 📸 Dashboard Layout Presets (10 Views)
 
-MacPulse offers **8 specialized dashboard layout presets** to suit different monitoring workflows. You can switch between them anytime while running by pressing **`v`**, or specify your preferred view on launch using `-V`, `--view`, or `--layout`.
+MacPulse offers **10 specialized full-screen dashboard layout presets** to suit different monitoring workflows. Bento Grid and Metrics Rail rearrange the header, metric panels, graphs, and process table into distinct screen compositions rather than only swapping the main content. Switch layouts with **`v`**, or launch with `-V`, `--view`, or `--layout`.
 
 ```
 ◈ MacPulse • Apple M4 • 10 Cores (6E+4P) • 8 GPU • v1.0.0            ⚡ 89% • Nominal • Up: 4d 2h • 16:50:00
 ┌─ CPU MONITOR • 34.0°C ─────┐┌─ GPU & VRAM ───────────────┐┌─ UNIFIED MEMORY ───────────┐┌─ NETWORK SPEED ────────────┐
-│ [||||...............]  18% ││ [||.................]  12% ││ [|||||||||.........]  53%  ││ Download: ▼  3.42 MB/s     │
-│ User: 12%  Sys:  6%        ││ Renderer: 12%  Tiler:  4%  ││ App: 5.2GB  Wired: 1.8GB   ││ Upload:   ▲ 480.2 KB/s     │
-│ Load: 1.64 1.52 1.48       ││ VRAM: 335.3MB / 1.3GB      ││ Comp: 1.6GB  Cache: 5.0GB  ││ In: 14.2GB  Out: 2.4GB     │
-│ 10 Cores (6E + 4P)         ││ 8 GPU Cores • Metal 3      ││ Free: 1.9GB  Swap: 0B      ││ Disk IO: R 16KB/s W 4KB/s   │
-└────────────────────────────┘└────────────────────────────┘└────────────────────────────┘└────────────────────────────┘
+│ █████░░░░░░░░░░░░░  18%  ││ ██░░░░░░░░░░░░░░░░ 12%  ││ ███████████░░░░░░░ 53% ││ Download: ▼  3.42 MB/s     │
+│ █████░░░░░░░░░░░░░  18%  ││ ██░░░░░░░░░░░░░░░░ 12%  ││ ███████████░░░░░░░ 53% ││ Upload:   ▲ 480.2 KB/s     │
+│ User: 12%  Sys:  6%        ││ Renderer: 12%  Tiler:  4%  ││ App: 5.2GB  Wired: 1.8GB   ││ In: 14.2GB  Out: 2.4GB     │
+│ Load: 1.64 1.52 1.48       ││ VRAM: 335.3MB / 1.3GB      ││ Comp: 1.6GB  Cache: 5.0GB  ││ Disk IO: R 16KB/s W 4KB/s   │
+│ 10 Cores (6E + 4P)         ││ 8 GPU Cores • Metal 3      ││ Free: 1.9GB  Swap: 0B      ││                             │
+└────────────────────────────┘└──────────────────────────────┘└──────────────────────────────┘└─────────────────────────────┘
 ┌─ CPU USAGE HISTORY • Apple Silicon Cores ────────────────┐┌─ GPU USAGE HISTORY • IOAccelerator ────────────────────┐
 │ ^ 100 %                                                  ││ ^ 100 %                                                  │
 │ |                                                        ││ |                                                        │
@@ -109,6 +110,10 @@ MacPulse offers **8 specialized dashboard layout presets** to suit different mon
    Unified memory deep-dive featuring a multi-segment proportional memory bar (App, Wired, Compressed, Cached, Free), Mach VM page table statistics, memory history graph, and memory-sorted process list.
 8. **Network & Disk (`net`)**:
    I/O throughput center displaying real-time download/upload gauges, cumulative session traffic, disk read/write bandwidth, dual-series network speed history graph, and I/O-active processes.
+9. **Bento Grid (`bento`)**:
+   A two-row metric-card grid with larger two-line CPU, GPU, and memory meters; history graphs and the process table sit side-by-side below a custom two-line status header.
+10. **Metrics Rail (`rail`)**:
+    A vertical CPU/GPU/memory/network meter rail beside a separate graph-and-process workspace, reflowing the dashboard into a sidebar composition.
 
 ---
 
@@ -134,6 +139,8 @@ MacPulse supports both Apple Silicon unified graphics and separate/discrete GPUs
 ## 🎨 Themes (15 Built-in Themes + Custom JSON)
 
 MacPulse includes **15 handcrafted 24-bit Truecolor RGB themes** (default: **Matrix Hacker**). Switch themes live inside the app using **`t`** (modal picker) or **`T`** (instant cycle).
+
+All built-in and JSON themes color the new two-row, block-style utilization meters with their CPU, GPU, memory, disk, and muted colors. Compact mode keeps single-row meters for density.
 
 | # | Theme Name | Description |
 | :---: | :--- | :--- |
@@ -189,7 +196,7 @@ Place custom `.json` themes in `~/.config/macpulse/themes/mytheme.json` or `./th
 | **`q`** / **`Ctrl+C`** | **Quit** | Cleanly restores terminal and exits |
 | **`t`** | **Theme Picker** | Opens interactive Theme Customizer popup with live selection |
 | **`T`** | **Cycle Themes** | Instantly cycles to next color theme |
-| **`v`** | **Cycle Layouts** | Cycles 8 view layouts: **Full** → **Compact** → **Zen** → **Overview** → **CPU** → **GPU** → **Mem** → **Net** |
+| **`v`** | **Cycle Layouts** | Cycles 10 full-screen views: **Full** → **Compact** → **Zen** → **Overview** → **CPU** → **GPU** → **Mem** → **Net** → **Bento** → **Rail** |
 | **`g`** | **Graph Mode** | Cycles history graphs: **Split** (CPU/GPU) → **Stacked** → **Dual-Series** → **Net Throughput** |
 | **`Tab`** | **Toggle Procs** | Toggles the Process Table on/off to maximize graphical history plots |
 | **`c`** | **Sort %CPU** | Sorts process table by %CPU (descending) |
@@ -242,7 +249,7 @@ Usage: macpulse [OPTIONS]
 Options:
   -t, --theme <name>     Select color theme on launch (e.g. matrix, cyberpunk, dracula, nord)
   -r, --rate <seconds>   Set refresh rate in seconds (default: 1.0, min: 0.2)
-  -V, --view, --layout   Set dashboard layout (full, compact, zen, overview, cpu, gpu, mem, net)
+  -V, --view, --layout   Set dashboard layout (full, compact, zen, overview, cpu, gpu, mem, net, bento, rail)
   -l, --list-themes      List all available built-in and custom themes (15 themes)
   -h, --help             Show help message
   -v, --version          Show version information
