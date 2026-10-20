@@ -52,6 +52,10 @@ typedef struct {
     int history_cpu_count;
 
     // GPU Telemetry
+    char gpu_name[64];
+    bool has_discrete_gpu;
+    char discrete_gpu_name[64];
+    float discrete_gpu_temp;
     float gpu_device_pct;
     float gpu_renderer_pct;
     float gpu_tiler_pct;

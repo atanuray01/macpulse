@@ -1,6 +1,6 @@
 CC ?= clang
 CFLAGS ?= -O3 -Wall -Wextra -Wno-unused-parameter
-FRAMEWORKS = -framework CoreFoundation -framework Foundation -framework IOKit
+FRAMEWORKS = -framework CoreFoundation -framework Foundation -framework IOKit -framework Metal
 INCLUDES = -Isrc
 
 SRC = src/theme.c src/telemetry.m src/ui.c src/main.m

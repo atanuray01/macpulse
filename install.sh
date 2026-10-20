@@ -3,12 +3,12 @@ set -e
 
 echo "=================================================="
 echo "          Installing MacPulse for macOS           "
-echo "  Apple Silicon Native Terminal System Monitor    "
+echo "       Native macOS Terminal System Monitor       "
 echo "=================================================="
 
 # Check OS
 if [[ "$(uname)" != "Darwin" ]]; then
-    echo "Error: MacPulse is designed specifically for macOS (Apple Silicon)."
+    echo "Error: MacPulse is designed specifically for macOS."
     exit 1
 fi
 
@@ -34,6 +34,7 @@ clang -O3 \
     -framework CoreFoundation \
     -framework Foundation \
     -framework IOKit \
+    -framework Metal \
     -Isrc \
     src/theme.c src/telemetry.m src/ui.c src/main.m \
     -o bin/macpulse

@@ -1,7 +1,7 @@
 # MacPulse ◈
 
-> **Ultra-Fast, Real-Time Apple Silicon System Monitor & Dashboard for macOS Terminal**  
-> *Sudo-free native telemetry, rolling graphs, unified memory breakdown, interactive activity monitor & 12 pro color themes.*
+> **Ultra-Fast, Real-Time Apple Silicon & Mac System Monitor & Dashboard for Terminal**
+> *Sudo-free native telemetry, rolling graphs, unified memory breakdown, interactive activity monitor, 8 layout presets & 15 pro color themes.*
 
 ---
 
@@ -13,7 +13,7 @@
  | |  | | (_| | (__| |   | |_| | \__ \  __/ 
  |_|  |_|\__,_|\___|_|    \__,_|_|___/\___| 
                                            
-        ◈ Apple Silicon Terminal Dashboard ◈
+        ◈ Apple Silicon & Mac Terminal Dashboard ◈
 ```
 
 ---
@@ -22,25 +22,44 @@
 
 | Feature | `mactop` | `btop` / `htop` | **`MacPulse` (This App)** |
 | :--- | :---: | :---: | :---: |
-| **No Sudo Required** | ✅ Yes | ❌ Needs Root for GPU | **✅ Yes (100% Native APIs)** |
-| **Apple Silicon M1 - M5 Support** | ✅ Yes | ⚠️ Partial | **✅ Yes (P-Cores, E-Cores, SoC)** |
-| **CPU Usage History Graph** | ❌ None | ⚠️ Basic | **✅ Multi-Level Unicode Sparklines** |
-| **GPU Device, Renderer & Tiler %** | ⚠️ Basic | ❌ Missing on Mac | **✅ Full `IOAccelerator` Telemetry** |
+| **No Sudo Required** | ✅ Yes | ❌ Needs Root for GPU | **✅ Yes (100% Native macOS APIs)** |
+| **Apple Silicon (M1–M5) & Intel Macs** | ✅ Yes | ⚠️ Partial | **✅ Yes (P-Cores, E-Cores, SoC & Intel)** |
+| **CPU Usage History Graph** | ❌ None | ⚠️ Basic | **✅ Multi-Level Unicode Sparklines (ttyplot)** |
+| **GPU Utilization (Device, Renderer, Tiler)** | ⚠️ Basic | ❌ Missing on Mac | **✅ Full `IOAccelerator` Telemetry** |
+| **Integrated & Discrete GPU Telemetry** | ⚠️ Integrated | ❌ None | **✅ Apple Silicon SoC + AMD/eGPU/PCIe Cards** |
+| **GPU Temperatures** | ⚠️ Avg only | ❌ None | **✅ SoC Die (`PMU2`), dGPU IOKit, IOHID & SMC** |
 | **GPU VRAM In-Use vs Allocated** | ❌ None | ❌ None | **✅ Live VRAM Breakdown** |
-| **Real-time Thermal Die Sensors** | ⚠️ Avg only | ❌ None | **✅ CPU, GPU, SoC Max, SSD & Battery** |
-| **System Thermal Throttling State**| ❌ None | ❌ None | **✅ Nominal / Fair / Serious / Critical** |
+| **System Thermal Throttling State** | ❌ None | ❌ None | **✅ Nominal / Fair / Serious / Critical** |
 | **Unified Memory Breakdown** | ⚠️ Basic | ⚠️ Standard RAM | **✅ App, Wired, Compressed, Cache, Swap** |
-| **Network Speed & Dual Sparklines**| ❌ None | ⚠️ Basic | **✅ Live ▼ Down / ▲ Up + Rolling Graph** |
-| **Activity Monitor / Process Table**| ❌ None | ✅ Yes | **✅ Live %CPU, %MEM, Search & Sort** |
-| **Theme Customization** | ❌ Minimal | ⚠️ Fixed Palettes | **✅ 12 Pro Themes + Live Modal + JSON** |
+| **Network Speed & Disk I/O** | ❌ None | ⚠️ Basic | **✅ Live ▼ Down / ▲ Up + Read/Write Rates** |
+| **Activity Monitor / Process Table** | ❌ None | ✅ Yes | **✅ Live %CPU, %MEM, %GPU, Search & Kill** |
+| **Dashboard Layout Presets** | 1 View | 1 View | **✅ 8 Focused Views (Full, CPU, GPU, Net...)** |
+| **Theme Customization** | ❌ Minimal | ⚠️ Fixed Palettes | **✅ 15 Pro Themes + Live Modal + JSON** |
 | **Zero-Flicker Double Buffering** | ⚠️ Curses | ⚠️ Redraws | **✅ Atomic Double-Buffered Frames** |
 | **Binary Footprint & CPU Usage** | ~15MB | ~25MB | **< 1MB binary, < 0.3% CPU usage** |
 
 ---
 
-## 📸 Dashboard Layout Overview
+## 🖥️ Platform Limitation: macOS Only
 
-MacPulse organizes your Mac's telemetry into a unified, high-density dashboard featuring **CPU, GPU, Unified Memory, and Network Speed** readings alongside **authentic ttyplot-style graphical history plots**:
+> [!IMPORTANT]
+> **MacPulse is strictly engineered for macOS.**
+> It does **not** support Linux or Windows.
+
+MacPulse achieves its high performance, zero-sudo monitoring, and sub-megabyte footprint by directly interfacing with low-level Apple Darwin and macOS frameworks:
+- **Darwin Kernel & Mach Host APIs** (`host_processor_info`, `host_statistics64`, `proc_pidinfo`)
+- **IOKit & IOAccelerator** (`PerformanceStatistics` for Apple Silicon GPU and discrete PCIe cards)
+- **IOHIDEventSystemClient** (Direct hardware thermal die reading on Apple Silicon SoCs)
+- **Metal Framework** (`MTLCopyAllDevices()` for discrete GPU card and unified memory detection)
+- **AppleSMC** (Direct sensor queries for discrete Intel/AMD Mac graphics hardware)
+
+Supporting Linux or Windows would require entirely separate telemetry engines (e.g., `/proc`, `sysfs`, `nvml`, `udev` on Linux; PDH, WMI, and DXGI on Windows). MacPulse intentionally focuses 100% on providing the best possible macOS and Apple Silicon experience.
+
+---
+
+## 📸 Dashboard Layout Presets (8 Views)
+
+MacPulse offers **8 specialized dashboard layout presets** to suit different monitoring workflows. You can switch between them anytime while running by pressing **`v`**, or specify your preferred view on launch using `-V`, `--view`, or `--layout`.
 
 ```
 ◈ MacPulse • Apple M4 • 10 Cores (6E+4P) • 8 GPU • v1.0.0            ⚡ 89% • Nominal • Up: 4d 2h • 16:50:00
@@ -69,90 +88,73 @@ MacPulse organizes your Mac's telemetry into a unified, high-density dashboard f
 │ 639     atanuray      67.2MB       1.2%  0.0%   0.4%  0m09s    ControlCenter                                         │
 │ 645     atanuray      120.2MB      0.8%  0.0%   0.7%  0m04s    Finder                                                │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
- [q]Exit [t]Themes [g]Graphs:Split [Tab]HideProcs [c]CPU [m]Mem [p]PID [/]Search [x]Kill [+/-]1.0s
+ [q]Exit [t]Themes [v]Layout:Full [g]Graphs:Split [Tab]HideProcs [c]CPU [m]Mem [p]PID [/]Search [x]Kill [+/-]1.0s
 ```
+
+### Available Views
+
+1. **Full Dashboard (`full`)** *(Default)*:
+   The complete command center: 4 stat cards (CPU, GPU, Memory, Network), rolling Unicode history graphs (CPU & GPU), and the full interactive Activity Monitor process table.
+2. **Compact Layout (`compact`)**:
+   Horizontal density layout with compact metric cards, a rolling history graph, and an expanded process table for smaller terminal windows.
+3. **Zen Graphs (`zen`)**:
+   Minimalist graphical mode that maximizes the full screen for Unicode history plots with a compact status ticker along the bottom.
+4. **System Overview (`overview`)**:
+   High-level health and hardware banner (chip model, cores, thermal state, battery health, uptime) alongside 4 metric cards and top resource-consuming processes.
+5. **CPU-Focused (`cpu`)**:
+   Deep-dive CPU view featuring per-core Efficiency (E) and Performance (P) core meters, detailed user/system/idle load breakdown, full-width CPU history graph, and auto-sorted CPU process list.
+6. **GPU-Focused (`gpu`)**:
+   Graphics engine view showing device utilization, renderer/tiler load, VRAM usage vs allocation, discrete GPU card detection, GPU die temperatures, full-width GPU graph, and GPU-sorted processes.
+7. **Memory-Focused (`mem`)**:
+   Unified memory deep-dive featuring a multi-segment proportional memory bar (App, Wired, Compressed, Cached, Free), Mach VM page table statistics, memory history graph, and memory-sorted process list.
+8. **Network & Disk (`net`)**:
+   I/O throughput center displaying real-time download/upload gauges, cumulative session traffic, disk read/write bandwidth, dual-series network speed history graph, and I/O-active processes.
 
 ---
 
-## 🚀 Installation & Quick Start
+## 🌡️ GPU Telemetry & Temperature Support
 
-### Option 1: Quick One-Line Installer
-Run the automated installer script:
-```bash
-./install.sh
-```
+### Integrated & Separate / Discrete GPU Architecture
+MacPulse supports both Apple Silicon unified graphics and separate/discrete GPUs (eGPUs, AMD Radeon PCIe cards on Intel Macs or Mac Pro):
 
-### Option 2: Build with `make`
-Compile and install using Apple Clang:
-```bash
-make
-sudo make install
-```
+- **Apple Silicon Integrated GPUs**:
+  Telemetry is extracted directly from the Apple Silicon `IOAccelerator` device. GPU die temperatures are queried via `IOHIDEventSystemClient` using Apple SoC thermal sensors (`PMU2 tdie`, `PMU2 tdev`).
+- **Separate / Discrete GPUs (dGPU & eGPU)**:
+  Detected via the Metal framework (`MTLCopyAllDevices()`) by inspecting devices without unified memory. Temperatures are extracted using a multi-tiered pipeline:
+  1. `IOAccelerator` `PerformanceStatistics` dictionary keys (`Temperature(C)`, `Temperature`, `GPU Core Temperature`, `Sensor Temperature`).
+  2. IOHID thermal sensors matched against discrete GPU signatures (`dGPU`, `eGPU`, `Radeon`, `AMD`, `NVIDIA`, `GeForce`).
+  3. AppleSMC fallback querying discrete GPU temperature keys (`TG0D`, `TG0P`, `TG1D`, `TG1P`).
 
-### Option 3: Direct Compilation
-Compile with a single command (requires zero external libraries, links standard macOS frameworks):
-```bash
-clang -O3 \
-    -framework CoreFoundation \
-    -framework Foundation \
-    -framework IOKit \
-    -Isrc \
-    src/theme.c src/telemetry.m src/ui.c src/main.m \
-    -o bin/macpulse
-```
-
-Run MacPulse immediately:
-```bash
-./bin/macpulse
-```
+> [!NOTE]
+> **GPU Metric Accuracy Note**: Total GPU Device %, Renderer %, and Tiler % are hardware measurements provided directly by the macOS `IOAccelerator` kernel driver.
+> The per-process `%GPU` column in the Activity Monitor is an algorithmic estimate derived from process UI rendering activity, Metal execution contexts, and CPU work, as macOS Darwin APIs do not expose unprivileged per-process GPU hardware counters without root/DTrace permissions.
 
 ---
 
-## ⌨️ Interactive Keybindings & Controls
+## 🎨 Themes (15 Built-in Themes + Custom JSON)
 
-| Key | Action | Description |
-| :--- | :--- | :--- |
-| **`q`** / **`Ctrl+C`** | **Quit** | Cleanly restores terminal and exits |
-| **`t`** | **Theme Picker** | Opens interactive Theme Customizer popup with live swatches |
-| **`T`** | **Cycle Themes** | Instantly cycles to the next color theme |
-| **`g`** | **Graph Mode** | Cycles ttyplot graph modes: **Split** (CPU/GPU) → **Stacked** → **Dual-Series** → **Net Throughput** |
-| **`Tab`** | **Toggle Procs** | Toggles the Process Table on/off to maximize the graphical history plots |
-| **`v`** | **View Mode** | Cycles view layout modes (**Full Dashboard** → **Compact** → **Zen Graphs**) |
-| **`c`** | **Sort %CPU** | Sorts process table by %CPU (descending) |
-| **`m`** | **Sort %MEM** | Sorts process table by Memory usage (descending) |
-| **`p`** | **Sort PID** | Sorts process table by Process ID |
-| **`n`** | **Sort Name** | Sorts process table alphabetically by command name |
-| **`r`** | **Reverse Sort** | Inverts the current sort order (ascending/descending) |
-| **`/`** | **Search Filter** | Live filter processes by process name or username |
-| **`x`** / **`K`** | **Kill Process** | Opens confirmation dialog to send `SIGTERM` to selected process |
-| **`↑` / `↓` / `j` / `k`** | **Scroll** | Scroll up and down through the process list |
-| **`PgUp` / `PgDn`** | **Page Scroll** | Scroll process list by 10 rows |
-| **`+` / `-`** | **Refresh Speed** | Adjusts refresh interval (0.25s up to 5.0s) |
-| **`h`** / **`?`** | **Help Modal** | Opens the interactive shortcut reference dialog |
-| **`Esc`** | **Cancel / Close** | Closes active modal or cancels active search filter |
+MacPulse includes **15 handcrafted 24-bit Truecolor RGB themes** (default: **Matrix Hacker**). Switch themes live inside the app using **`t`** (modal picker) or **`T`** (instant cycle).
 
----
+| # | Theme Name | Description |
+| :---: | :--- | :--- |
+| 1 | **Matrix Hacker** *(Default)* | Digital rain monochrome phosphor greens |
+| 2 | **Linux Arch Cyan** | Electric cyan, deep navy, and ice blue Linux terminal |
+| 3 | **Ubuntu Amber** | Classic warm phosphor amber and Ubuntu orange |
+| 4 | **Cyberpunk 2077** | High contrast neon pink, electric yellow and laser cyan |
+| 5 | **Dracula Pro** | Iconic gothic dark theme with vibrant pastels |
+| 6 | **Tokyo Night** | Modern clean indigo, soft cyan, purple and warm orange |
+| 7 | **Nord Arctic** | Arctic blue, aurora green and clean glacial tones |
+| 8 | **Catppuccin Mocha** | Warm soothing pastel palette with mauve, peach and teal |
+| 9 | **Monokai Pro** | High-energy magenta, acid yellow, and bright mint |
+| 10 | **Gruvbox Dark** | Warm retro groove with gold, aqua, and autumn orange |
+| 11 | **Kali Linux Dark** | Offensive security dark terminal with stealth crimson & ice blue |
+| 12 | **Apple Classic** | Minimalist Cupertino styling with silver, blue and emerald |
+| 13 | **Sunset Horizon** | Warm twilight gradient with flamingo pink and golden mango |
+| 14 | **Solarized Dark** | Precision engineered scientific palette with teal and cyan |
+| 15 | **Synthwave 84** | Outrun aesthetic with magenta laser and radioactive cyan |
 
-## 🎨 Theme Customization (12 Built-in Themes + Custom JSON)
-
-MacPulse includes 12 handcrafted 24-bit Truecolor RGB themes:
-
-1. **Cyberpunk 2077** — High contrast neon pink, electric yellow and laser cyan
-2. **Tokyo Night** — Modern clean indigo, soft cyan, purple and warm orange
-3. **Dracula Pro** — Iconic gothic dark theme with vibrant pastels
-4. **Nord Arctic** — Arctic blue, aurora green and clean glacial tones
-5. **Catppuccin Mocha** — Warm soothing pastel palette with mauve, peach and teal
-6. **Monokai Pro** — High-energy magenta, acid yellow, and bright mint
-7. **Gruvbox Dark** — Warm retro groove with gold, aqua, and autumn orange
-8. **Matrix Hacker** — Digital rain monochrome phosphor greens
-9. **Solarized Dark** — Precision engineered scientific palette with teal and cyan
-10. **Apple Classic** — Minimalist Cupertino styling with silver, blue and emerald
-11. **Sunset Horizon** — Warm twilight gradient with flamingo pink and golden mango
-12. **Synthwave 84** — Outrun aesthetic with magenta laser and radioactive cyan
-
-### Creating Custom Themes
-
-Place your custom `.json` theme file in `~/.config/macpulse/themes/mytheme.json` or `./themes/`:
+### Custom JSON Themes
+Place custom `.json` themes in `~/.config/macpulse/themes/mytheme.json` or `./themes/`:
 
 ```json
 {
@@ -178,30 +180,57 @@ Place your custom `.json` theme file in `~/.config/macpulse/themes/mytheme.json`
 }
 ```
 
-Launch with your custom theme:
-```bash
-macpulse --theme "My Custom Theme"
-```
+---
 
-List all available themes:
-```bash
-macpulse --list-themes
-```
+## ⌨️ Interactive Keybindings & Controls
+
+| Key | Action | Description |
+| :--- | :--- | :--- |
+| **`q`** / **`Ctrl+C`** | **Quit** | Cleanly restores terminal and exits |
+| **`t`** | **Theme Picker** | Opens interactive Theme Customizer popup with live selection |
+| **`T`** | **Cycle Themes** | Instantly cycles to next color theme |
+| **`v`** | **Cycle Layouts** | Cycles 8 view layouts: **Full** → **Compact** → **Zen** → **Overview** → **CPU** → **GPU** → **Mem** → **Net** |
+| **`g`** | **Graph Mode** | Cycles history graphs: **Split** (CPU/GPU) → **Stacked** → **Dual-Series** → **Net Throughput** |
+| **`Tab`** | **Toggle Procs** | Toggles the Process Table on/off to maximize graphical history plots |
+| **`c`** | **Sort %CPU** | Sorts process table by %CPU (descending) |
+| **`m`** | **Sort %MEM** | Sorts process table by Memory usage (descending) |
+| **`p`** | **Sort PID** | Sorts process table by Process ID |
+| **`n`** | **Sort Name** | Sorts process table alphabetically by command name |
+| **`r`** | **Reverse Sort** | Inverts the current sort order (ascending/descending) |
+| **`/`** | **Search Filter** | Live filter processes by process name or username |
+| **`x`** / **`K`** | **Kill Process** | Opens confirmation dialog to send `SIGTERM` to selected process |
+| **`↑` / `↓` / `j` / `k`** | **Scroll** | Scroll up and down through the process list |
+| **`PgUp` / `PgDn`** | **Page Scroll** | Scroll process list by 10 rows |
+| **`+` / `-`** | **Refresh Speed** | Adjusts refresh interval (0.25s up to 5.0s) |
+| **`h`** / **`?`** | **Help Modal** | Opens the interactive shortcut reference dialog |
+| **`Esc`** | **Cancel / Close** | Closes active modal or cancels active search filter |
 
 ---
 
-## 🛠️ Native Architecture (Zero Sudo Required)
+## 🚀 Installation & Build
 
-MacPulse uses zero command-line subprocess wrappers and requires **no sudo privileges** by interacting directly with low-level Apple Darwin C/Mach kernel APIs:
+### Option 1: Quick Installer
+```bash
+./install.sh
+```
 
-- **Mach Kernel Host API (`host_processor_info`)**: Gathers per-core ticks (user, system, idle, nice) across all Performance and Efficiency cores.
-- **IOKit `IOAccelerator` (`PerformanceStatistics`)**: Reads real-time GPU Device %, Renderer %, Tiler % and allocated VRAM bytes directly from the Apple Silicon GPU driver.
-- **`IOHIDEventSystemClient`**: Direct access to Apple SoC thermal die sensors (`PMU tdie`, `PMU2 tdie`) for CPU, GPU, SSD, and battery temperatures.
-- **`NSProcessInfo.thermalState`**: Reads macOS system thermal throttling state (`Nominal`, `Fair`, `Serious`, `Critical`).
-- **Mach VM Statistics (`host_statistics64`) & `sysctl`**: Extracts exact App, Wired, Compressed, Cached, and Swap memory breakdown.
-- **POSIX `getifaddrs`**: Interrogates network interfaces for real-time input/output byte deltas.
-- **Darwin `libproc.h` (`proc_listpids`, `proc_pidinfo`)**: High-speed, non-blocking process enumeration with CPU delta and resident memory sizing.
-- **Double-Buffered Atomic Rendering**: Assembles complete ANSI frames in a dynamic memory buffer and writes them out in a single `write(2)` syscall to guarantee zero screen tearing.
+### Option 2: Build with `make`
+```bash
+make
+sudo make install
+```
+
+### Option 3: Direct Clang Compilation
+```bash
+clang -O3 \
+    -framework CoreFoundation \
+    -framework Foundation \
+    -framework IOKit \
+    -framework Metal \
+    -Isrc \
+    src/theme.c src/telemetry.m src/ui.c src/main.m \
+    -o bin/macpulse
+```
 
 ---
 
@@ -211,9 +240,10 @@ MacPulse uses zero command-line subprocess wrappers and requires **no sudo privi
 Usage: macpulse [OPTIONS]
 
 Options:
-  -t, --theme <name>     Select color theme on launch (e.g. cyberpunk, dracula, nord)
+  -t, --theme <name>     Select color theme on launch (e.g. matrix, cyberpunk, dracula, nord)
   -r, --rate <seconds>   Set refresh rate in seconds (default: 1.0, min: 0.2)
-  -l, --list-themes      List all available built-in and custom themes
+  -V, --view, --layout   Set dashboard layout (full, compact, zen, overview, cpu, gpu, mem, net)
+  -l, --list-themes      List all available built-in and custom themes (15 themes)
   -h, --help             Show help message
   -v, --version          Show version information
 ```
@@ -223,4 +253,4 @@ Options:
 ## 📜 License
 
 MIT License — Copyright (c) 2026 Atanu Roy.  
-Designed and built for Apple Silicon Mac users.
+Designed and built natively for macOS and Apple Silicon.

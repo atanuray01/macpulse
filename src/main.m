@@ -52,7 +52,7 @@ static void cleanup_and_exit(int code) {
     exit(code);
 }
 
-static void save_user_config(const char *theme_name, int refresh_ms) {
+static void save_user_config(const char *theme_name, int refresh_ms, ViewMode view_mode) {
     const char *home = getenv("HOME");
     if (!home) return;
     char dir[512], file[512];
@@ -60,14 +60,27 @@ static void save_user_config(const char *theme_name, int refresh_ms) {
     snprintf(file, sizeof(file), "%s/.config/macpulse/config.json", home);
     mkdir(dir, 0755);
 
+    const char *v_str = "full";
+    switch (view_mode) {
+        case VIEW_FULL:     v_str = "full"; break;
+        case VIEW_COMPACT:  v_str = "compact"; break;
+        case VIEW_ZEN:      v_str = "zen"; break;
+        case VIEW_OVERVIEW: v_str = "overview"; break;
+        case VIEW_CPU:      v_str = "cpu"; break;
+        case VIEW_GPU:      v_str = "gpu"; break;
+        case VIEW_MEM:      v_str = "mem"; break;
+        case VIEW_NET:      v_str = "net"; break;
+        default:            v_str = "full"; break;
+    }
+
     FILE *f = fopen(file, "w");
     if (!f) return;
-    fprintf(f, "{\n  \"theme\": \"%s\",\n  \"refresh_rate_seconds\": %.2f\n}\n",
-            theme_name, (float)refresh_ms / 1000.0f);
+    fprintf(f, "{\n  \"theme\": \"%s\",\n  \"refresh_rate_seconds\": %.2f,\n  \"view_mode\": \"%s\"\n}\n",
+            theme_name, (float)refresh_ms / 1000.0f, v_str);
     fclose(f);
 }
 
-static void load_user_config(char *theme_out, size_t theme_sz, int *refresh_ms_out) {
+static void load_user_config(char *theme_out, size_t theme_sz, int *refresh_ms_out, ViewMode *view_mode_out) {
     const char *home = getenv("HOME");
     if (!home) return;
     char file[512];
@@ -114,16 +127,37 @@ static void load_user_config(char *theme_out, size_t theme_sz, int *refresh_ms_o
             }
         }
     }
+
+    const char *v_pos = strstr(buf, "\"view_mode\"");
+    if (v_pos && view_mode_out) {
+        v_pos = strchr(v_pos, ':');
+        if (v_pos) {
+            v_pos = strchr(v_pos, '\"');
+            if (v_pos) {
+                v_pos++;
+                const char *end = strchr(v_pos, '\"');
+                if (end) {
+                    char v_buf[32];
+                    size_t len = end - v_pos;
+                    if (len >= sizeof(v_buf)) len = sizeof(v_buf) - 1;
+                    strncpy(v_buf, v_pos, len);
+                    v_buf[len] = '\0';
+                    *view_mode_out = ui_view_mode_from_string(v_buf);
+                }
+            }
+        }
+    }
     free(buf);
 }
 
 static void print_usage(const char *prog) {
-    printf("MacPulse - Modern Apple Silicon System Monitor & Dashboard for Terminal\n\n");
+    printf("MacPulse - Modern Apple Silicon & macOS System Monitor & Dashboard for Terminal\n\n");
     printf("Usage: %s [OPTIONS]\n\n", prog);
     printf("Options:\n");
     printf("  -t, --theme <name>     Select color theme on launch (e.g. matrix, cyberpunk, dracula, nord)\n");
     printf("  -r, --rate <seconds>   Set refresh rate in seconds (default: 1.0, min: 0.2)\n");
-    printf("  -l, --list-themes      List all available built-in and custom themes\n");
+    printf("  -V, --view, --layout   Set dashboard layout (full, compact, zen, overview, cpu, gpu, mem, net)\n");
+    printf("  -l, --list-themes      List all available built-in and custom themes (15 themes)\n");
     printf("  -h, --help             Show this help message\n");
     printf("  -v, --version          Show version information\n\n");
     printf("Shortcuts inside MacPulse:\n");
@@ -132,7 +166,7 @@ static void print_usage(const char *prog) {
     printf("  T                      Instantly cycle to next theme\n");
     printf("  g                      Cycle Graph modes (Split CPU/GPU, Stacked, Dual-Series, Network)\n");
     printf("  Tab                    Toggle Process Table / Maximize Graphs\n");
-    printf("  v                      Cycle View modes (Full, Compact, Zen)\n");
+    printf("  v                      Cycle View modes (Full, Compact, Zen, Overview, CPU, GPU, Memory, Network)\n");
     printf("  c / m / p / n          Sort processes by CPU%% / Memory / PID / Name\n");
     printf("  r                      Reverse sort order\n");
     printf("  /                      Search / filter processes by name or user\n");
@@ -147,7 +181,9 @@ int main(int argc, char *argv[]) {
 
     int refresh_ms = 1000;
     char saved_theme[64] = "";
-    load_user_config(saved_theme, sizeof(saved_theme), &refresh_ms);
+    ViewMode active_view_mode = VIEW_FULL;
+    load_user_config(saved_theme, sizeof(saved_theme), &refresh_ms, &active_view_mode);
+
     if (saved_theme[0]) {
         theme_set_by_name(saved_theme);
     }
@@ -159,7 +195,7 @@ int main(int argc, char *argv[]) {
             print_usage(argv[0]);
             return 0;
         } else if (strcmp(argv[i], "-v") == 0 || strcmp(argv[i], "--version") == 0) {
-            printf("MacPulse v1.0.0 (Apple Silicon Native)\n");
+            printf("MacPulse v1.0.0 (Apple Silicon & macOS Native)\n");
             return 0;
         } else if (strcmp(argv[i], "-l") == 0 || strcmp(argv[i], "--list-themes") == 0) {
             printf("Available MacPulse Themes (%d total):\n\n", theme_get_count());
@@ -175,6 +211,8 @@ int main(int argc, char *argv[]) {
             if (r >= 0.2f && r <= 10.0f) {
                 refresh_ms = (int)(r * 1000.0f);
             }
+        } else if ((strcmp(argv[i], "-V") == 0 || strcmp(argv[i], "--view") == 0 || strcmp(argv[i], "--layout") == 0) && i + 1 < argc) {
+            active_view_mode = ui_view_mode_from_string(argv[++i]);
         }
     }
 
@@ -206,12 +244,16 @@ int main(int argc, char *argv[]) {
     memset(&state, 0, sizeof(state));
     state.refresh_ms = refresh_ms;
     state.modal = MODAL_NONE;
-    state.view_mode = VIEW_FULL;
+    state.view_mode = active_view_mode;
     state.graph_mode = GRAPH_MODE_SPLIT;
     state.show_procs = true;
 
     int current_sort = SORT_BY_CPU;
     bool sort_reverse = false;
+    if (state.view_mode == VIEW_MEM) {
+        current_sort = SORT_BY_MEM;
+        telemetry_sort_processes(current_sort, sort_reverse);
+    }
 
     uint64_t last_update_ms = 0;
 
@@ -281,7 +323,7 @@ int main(int argc, char *argv[]) {
                 } else if (state.modal == MODAL_THEME) {
                     if (ch == '\n' || ch == '\r') {
                         theme_set_by_index(state.theme_cursor);
-                        save_user_config(theme_current()->name, state.refresh_ms);
+                        save_user_config(theme_current()->name, state.refresh_ms, state.view_mode);
                         state.modal = MODAL_NONE;
                     } else if (ch == 'q' || ch == 't') {
                         state.modal = MODAL_NONE;
@@ -334,7 +376,7 @@ int main(int argc, char *argv[]) {
                             break;
                         case 'T':
                             theme_cycle_next();
-                            save_user_config(theme_current()->name, state.refresh_ms);
+                            save_user_config(theme_current()->name, state.refresh_ms, state.view_mode);
                             break;
                         case 'g':
                         case 'G': {
@@ -354,13 +396,23 @@ int main(int argc, char *argv[]) {
                             break;
                         case 'v':
                         case 'V': {
-                            state.view_mode = (state.view_mode + 1) % 3;
-                            const char *v_names[] = {
-                                "View: Full Dashboard",
-                                "View: Compact Layout",
-                                "View: Zen Graphs"
-                            };
-                            ui_set_status(&state, v_names[state.view_mode]);
+                            state.view_mode = (ViewMode)((state.view_mode + 1) % VIEW_COUNT);
+                            char v_msg[128];
+                            snprintf(v_msg, sizeof(v_msg), "View: %s", ui_view_mode_name(state.view_mode));
+                            ui_set_status(&state, v_msg);
+
+                            // Auto-sort intelligently for focused views
+                            if (state.view_mode == VIEW_CPU && current_sort != SORT_BY_CPU) {
+                                current_sort = SORT_BY_CPU;
+                                sort_reverse = false;
+                                telemetry_sort_processes(current_sort, sort_reverse);
+                            } else if (state.view_mode == VIEW_MEM && current_sort != SORT_BY_MEM) {
+                                current_sort = SORT_BY_MEM;
+                                sort_reverse = false;
+                                telemetry_sort_processes(current_sort, sort_reverse);
+                            }
+
+                            save_user_config(theme_current()->name, state.refresh_ms, state.view_mode);
                             break;
                         }
                         case 'c':
@@ -415,12 +467,12 @@ int main(int argc, char *argv[]) {
                         case '+':
                         case '=':
                             if (state.refresh_ms > 250) state.refresh_ms -= 250;
-                            save_user_config(theme_current()->name, state.refresh_ms);
+                            save_user_config(theme_current()->name, state.refresh_ms, state.view_mode);
                             break;
                         case '-':
                         case '_':
                             if (state.refresh_ms < 5000) state.refresh_ms += 250;
-                            save_user_config(theme_current()->name, state.refresh_ms);
+                            save_user_config(theme_current()->name, state.refresh_ms, state.view_mode);
                             break;
                         case 'j': {
                             const SystemTelemetry *t_ptr = telemetry_get();
