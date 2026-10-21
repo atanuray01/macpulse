@@ -815,10 +815,10 @@ static void draw_cpu_card(int x, int y, int w, int h,
   grid_box(x, y, w, h, "CPU MONITOR", extra, t->border, t->cpu_color, t->title);
 
   int cur_y = y + 1;
-  if (h >= 7) {
-    grid_bar_large(x + 2, cur_y, w - 4, 2, telem->cpu_total_pct,
+  if (h >= 6) {
+    grid_bar_large(x + 2, cur_y, w - 4, 1, telem->cpu_total_pct,
                    t->cpu_color, t->dim, t->text);
-    cur_y += 2;
+    cur_y += 1;
   } else {
     grid_bar(x + 2, cur_y, w - 10, telem->cpu_total_pct, t->cpu_color, t->dim,
              t->text);
@@ -865,10 +865,10 @@ static void draw_gpu_card(int x, int y, int w, int h,
   grid_box(x, y, w, h, "GPU & VRAM", extra, t->border, t->gpu_color, t->title);
 
   int cur_y = y + 1;
-  if (h >= 7) {
-    grid_bar_large(x + 2, cur_y, w - 4, 2, telem->gpu_device_pct,
+  if (h >= 6) {
+    grid_bar_large(x + 2, cur_y, w - 4, 1, telem->gpu_device_pct,
                    t->gpu_color, t->dim, t->text);
-    cur_y += 2;
+    cur_y += 1;
   } else {
     grid_bar(x + 2, cur_y, w - 10, telem->gpu_device_pct, t->gpu_color, t->dim,
              t->text);
@@ -919,10 +919,10 @@ static void draw_mem_card(int x, int y, int w, int h,
            t->title);
 
   int cur_y = y + 1;
-  if (h >= 7) {
-    grid_bar_large(x + 2, cur_y, w - 4, 2, telem->mem_used_pct,
+  if (h >= 6) {
+    grid_bar_large(x + 2, cur_y, w - 4, 1, telem->mem_used_pct,
                    t->mem_color, t->dim, t->text);
-    cur_y += 2;
+    cur_y += 1;
   } else {
     grid_bar(x + 2, cur_y, w - 10, telem->mem_used_pct, t->mem_color, t->dim,
              t->text);
@@ -1311,7 +1311,7 @@ static void render_full_view(UIState *state, const SystemTelemetry *telem,
                              const Theme *t, int W, int H) {
   draw_header_bar(telem, t, W);
 
-  int card_h = 7;
+  int card_h = 6;
   int card_bottom_y = 1;
 
   if (W >= 108) {
@@ -1557,7 +1557,7 @@ static void render_overview_view(UIState *state, const SystemTelemetry *telem,
 
   // 2. 4 Feature Cards (height 6 rows)
   int cards_y = 1 + banner_h;
-  int card_h = 7;
+  int card_h = 6;
   if (W >= 108) {
     int col_w = W / 4;
     draw_cpu_card(0, cards_y, col_w, card_h, telem, t);
@@ -1607,7 +1607,7 @@ static void render_cpu_view(UIState *state, const SystemTelemetry *telem,
                             const Theme *t, int W, int H) {
   draw_header_bar(telem, t, W);
 
-  int top_h = 10;
+  int top_h = 9;
   int left_w = (W >= 96) ? 46 : (W / 2);
   if (left_w < 32)
     left_w = 32;
@@ -1620,7 +1620,7 @@ static void render_cpu_view(UIState *state, const SystemTelemetry *telem,
   grid_box(0, 1, left_w, top_h, "CPU OVERVIEW & LOAD", c_extra, t->border,
            t->cpu_color, t->title);
 
-  grid_bar_large(2, 2, left_w - 4, 2, telem->cpu_total_pct, t->cpu_color,
+  grid_bar_large(2, 2, left_w - 4, 1, telem->cpu_total_pct, t->cpu_color,
                  t->dim, t->text);
 
   char l1[128], l2[128], l3[128], l4[128], l5[128], l6[128];
@@ -1637,12 +1637,12 @@ static void render_cpu_view(UIState *state, const SystemTelemetry *telem,
   snprintf(l6, sizeof(l6), "Topology:      %d Cores (%d Perf + %d Effic)",
            telem->total_cores, telem->p_cores, telem->e_cores);
 
-  grid_print(2, 4, left_w - 4, l1, t->dim, false, false);
-  grid_print(2, 5, left_w - 4, l2, t->dim, false, false);
-  grid_print(2, 6, left_w - 4, l3, t->dim, false, false);
-  grid_print(2, 7, left_w - 4, l4, t->text, true, false);
-  grid_print(2, 8, left_w - 4, l5, t->dim, false, false);
-  grid_print(2, 9, left_w - 4, l6, t->text, true, false);
+  grid_print(2, 3, left_w - 4, l1, t->dim, false, false);
+  grid_print(2, 4, left_w - 4, l2, t->dim, false, false);
+  grid_print(2, 5, left_w - 4, l3, t->dim, false, false);
+  grid_print(2, 6, left_w - 4, l4, t->text, true, false);
+  grid_print(2, 7, left_w - 4, l5, t->dim, false, false);
+  grid_print(2, 8, left_w - 4, l6, t->text, true, false);
 
   // 2. Per-Core Meter Grid
   grid_box(left_w, 1, right_w, top_h, "PER-CORE UTILIZATION METER",
@@ -1715,7 +1715,7 @@ static void render_gpu_view(UIState *state, const SystemTelemetry *telem,
                             const Theme *t, int W, int H) {
   draw_header_bar(telem, t, W);
 
-  int top_h = 10;
+  int top_h = 9;
   int left_w = W / 2;
   int right_w = W - left_w;
 
@@ -1734,7 +1734,7 @@ static void render_gpu_view(UIState *state, const SystemTelemetry *telem,
   grid_box(0, 1, left_w, top_h, "GPU ENGINE & HARDWARE", g_extra, t->border,
            t->gpu_color, t->title);
 
-  grid_bar_large(2, 2, left_w - 4, 2, telem->gpu_device_pct, t->gpu_color,
+  grid_bar_large(2, 2, left_w - 4, 1, telem->gpu_device_pct, t->gpu_color,
                  t->dim, t->text);
 
   char gl1[128], gl2[128], gl3[128], gl4[128], gl5[128], gl6[128];
@@ -1757,12 +1757,12 @@ static void render_gpu_view(UIState *state, const SystemTelemetry *telem,
   snprintf(gl6, sizeof(gl6),
            "IOKit Driver:   Apple IOAcceleratorPerformanceStatistics");
 
-  grid_print(2, 4, left_w - 4, gl1, t->text, true, false);
-  grid_print(2, 5, left_w - 4, gl2, t->dim, false, false);
-  grid_print(2, 6, left_w - 4, gl3, t->dim, false, false);
-  grid_print(2, 7, left_w - 4, gl4, t->accent, true, false);
-  grid_print(2, 8, left_w - 4, gl5, t->dim, false, false);
-  grid_print(2, 9, left_w - 4, gl6, t->text, false, true);
+  grid_print(2, 3, left_w - 4, gl1, t->text, true, false);
+  grid_print(2, 4, left_w - 4, gl2, t->dim, false, false);
+  grid_print(2, 5, left_w - 4, gl3, t->dim, false, false);
+  grid_print(2, 6, left_w - 4, gl4, t->accent, true, false);
+  grid_print(2, 7, left_w - 4, gl5, t->dim, false, false);
+  grid_print(2, 8, left_w - 4, gl6, t->text, false, true);
 
   // 2. VRAM & Graphics Memory Card
   char in_vram[32], alloc_vram[32];
@@ -1777,7 +1777,7 @@ static void render_gpu_view(UIState *state, const SystemTelemetry *telem,
                        ? ((float)telem->gpu_in_use_bytes /
                           (float)telem->gpu_alloc_bytes * 100.0f)
                        : 0.0f;
-  grid_bar_large(left_w + 2, 2, right_w - 4, 2, vram_pct, t->accent, t->dim,
+  grid_bar_large(left_w + 2, 2, right_w - 4, 1, vram_pct, t->accent, t->dim,
                  t->text);
 
   char vl1[128], vl2[128], vl3[128], vl4[128], vl5[128], vl6[128];
@@ -1792,12 +1792,12 @@ static void render_gpu_view(UIState *state, const SystemTelemetry *telem,
            "Pipeline State: Hardware Ray Tracing & Mesh Shaders");
   snprintf(vl6, sizeof(vl6), "Host Device:    %s", telem->model_name);
 
-  grid_print(left_w + 2, 4, right_w - 4, vl1, t->text, true, false);
-  grid_print(left_w + 2, 5, right_w - 4, vl2, t->dim, false, false);
-  grid_print(left_w + 2, 6, right_w - 4, vl3, t->accent, true, false);
-  grid_print(left_w + 2, 7, right_w - 4, vl4, t->dim, false, false);
-  grid_print(left_w + 2, 8, right_w - 4, vl5, t->dim, false, false);
-  grid_print(left_w + 2, 9, right_w - 4, vl6, t->text, false, true);
+  grid_print(left_w + 2, 3, right_w - 4, vl1, t->text, true, false);
+  grid_print(left_w + 2, 4, right_w - 4, vl2, t->dim, false, false);
+  grid_print(left_w + 2, 5, right_w - 4, vl3, t->accent, true, false);
+  grid_print(left_w + 2, 6, right_w - 4, vl4, t->dim, false, false);
+  grid_print(left_w + 2, 7, right_w - 4, vl5, t->dim, false, false);
+  grid_print(left_w + 2, 8, right_w - 4, vl6, t->text, false, true);
 
   // 3. Full-Width GPU Usage Graph & Process Table
   int avail_h = (H - 1) - (1 + top_h);
@@ -1833,7 +1833,7 @@ static void render_mem_view(UIState *state, const SystemTelemetry *telem,
                             const Theme *t, int W, int H) {
   draw_header_bar(telem, t, W);
 
-  int top_h = 10;
+  int top_h = 9;
   int left_w = W / 2;
   int right_w = W - left_w;
 
@@ -1847,7 +1847,7 @@ static void render_mem_view(UIState *state, const SystemTelemetry *telem,
 
   grid_box(0, 1, left_w, top_h, "UNIFIED MEMORY STATUS", u_str, t->border,
            t->mem_color, t->title);
-  grid_bar_large(2, 2, left_w - 4, 2, telem->mem_used_pct, t->mem_color,
+  grid_bar_large(2, 2, left_w - 4, 1, telem->mem_used_pct, t->mem_color,
                  t->dim, t->text);
 
   char ml1[128], ml2[128], ml3[128], ml4[128];
@@ -1858,12 +1858,12 @@ static void render_mem_view(UIState *state, const SystemTelemetry *telem,
   snprintf(ml4, sizeof(ml4), "Swap Storage:    Used: %s / Total: %s", s_u_str,
            s_t_str);
 
-  grid_print(2, 4, left_w - 4, ml1, t->text, true, false);
-  grid_print(2, 5, left_w - 4, ml2, t->dim, false, false);
-  grid_print(2, 6, left_w - 4, ml3, t->dim, false, false);
-  grid_print(2, 7, left_w - 4, ml4, t->text, false, false);
+  grid_print(2, 3, left_w - 4, ml1, t->text, true, false);
+  grid_print(2, 4, left_w - 4, ml2, t->dim, false, false);
+  grid_print(2, 5, left_w - 4, ml3, t->dim, false, false);
+  grid_print(2, 6, left_w - 4, ml4, t->text, false, false);
 
-  // Multi-segment visual memory composition bar on row 8
+  // Multi-segment visual memory composition bar on row 7
   int bar_start = 2;
   int bar_len = left_w - 4;
   float tot_f = (float)telem->mem_total_bytes;
@@ -1875,22 +1875,22 @@ static void render_mem_view(UIState *state, const SystemTelemetry *telem,
 
     int cur_x = bar_start;
     for (int i = 0; i < app_len && cur_x < bar_start + bar_len; i++, cur_x++)
-      grid_set(cur_x, 8, "█", t->accent, (ColorRGB){0, 0, 0}, false, false,
+      grid_set(cur_x, 7, "█", t->accent, (ColorRGB){0, 0, 0}, false, false,
                false);
     for (int i = 0; i < wire_len && cur_x < bar_start + bar_len; i++, cur_x++)
-      grid_set(cur_x, 8, "█", t->gpu_color, (ColorRGB){0, 0, 0}, false, false,
+      grid_set(cur_x, 7, "█", t->gpu_color, (ColorRGB){0, 0, 0}, false, false,
                false);
     for (int i = 0; i < comp_len && cur_x < bar_start + bar_len; i++, cur_x++)
-      grid_set(cur_x, 8, "█", t->warn, (ColorRGB){0, 0, 0}, false, false,
+      grid_set(cur_x, 7, "█", t->warn, (ColorRGB){0, 0, 0}, false, false,
                false);
     for (int i = 0; i < cache_len && cur_x < bar_start + bar_len; i++, cur_x++)
-      grid_set(cur_x, 8, "█", t->dim, (ColorRGB){0, 0, 0}, false, false, false);
+      grid_set(cur_x, 7, "█", t->dim, (ColorRGB){0, 0, 0}, false, false, false);
     while (cur_x < bar_start + bar_len) {
-      grid_set(cur_x, 8, "░", t->dim, (ColorRGB){0, 0, 0}, false, false, false);
+      grid_set(cur_x, 7, "░", t->dim, (ColorRGB){0, 0, 0}, false, false, false);
       cur_x++;
     }
   }
-  grid_print(2, 9, left_w - 4, "■ App  ■ Wired  ■ Comp  ■ Cache  ░ Free",
+  grid_print(2, 8, left_w - 4, "■ App  ■ Wired  ■ Comp  ■ Cache  ░ Free",
              t->dim, false, true);
 
   // 2. Mach VM Memory Subsystem Card
@@ -1959,7 +1959,7 @@ static void render_net_view(UIState *state, const SystemTelemetry *telem,
                             const Theme *t, int W, int H) {
   draw_header_bar(telem, t, W);
 
-  int top_h = 10;
+  int top_h = 9;
   int left_w = W / 2;
   int right_w = W - left_w;
 
@@ -2018,9 +2018,9 @@ static void render_net_view(UIState *state, const SystemTelemetry *telem,
   grid_print(left_w + 2, 3, right_w - 4, dl2, t->accent2, true, false);
   grid_print(left_w + 2, 4, right_w - 4, dl3, t->dim, false, false);
   grid_print(left_w + 2, 5, right_w - 4, dl4, t->text, true, false);
-  grid_bar_large(left_w + 2, 6, right_w - 4, 2, disk_pct, t->accent, t->dim,
+  grid_bar_large(left_w + 2, 6, right_w - 4, 1, disk_pct, t->accent, t->dim,
                  t->text);
-  grid_print(left_w + 2, 8, right_w - 4, dl5, t->dim, false, false);
+  grid_print(left_w + 2, 7, right_w - 4, dl5, t->dim, false, false);
 
   // 3. Full-Width Network Dual-Series Graph & Process Table
   int avail_h = (H - 1) - (1 + top_h);
@@ -2079,7 +2079,7 @@ static void render_bento_view(UIState *state, const SystemTelemetry *telem,
                               const Theme *t, int W, int H) {
   draw_composed_header(telem, t, W, "BENTO GRID");
 
-  int card_h = H >= 34 ? 7 : 5;
+  int card_h = H >= 34 ? 6 : 5;
   int left_w = W / 2;
   int right_w = W - left_w;
   int cards_y = 3;
