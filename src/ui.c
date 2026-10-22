@@ -317,21 +317,22 @@ static void grid_bar(int x, int y, int width, float pct, ColorRGB fill_col,
   grid_print(x + width + 1, y, 6, pct_buf, text_col, true, false);
 }
 
-// Large theme-colored utilization meter for spacious dashboard panels.
-// The percentage label stays separate from the filled track for readability.
-static void grid_bar_large(int x, int y, int width, int height, float pct,
+// Large theme-colored utilization meter uses the full available panel width.
+// Keep the percentage label separate from the filled track for readability.
+static void grid_bar_large(int x, int y, int container_w, int height, float pct,
                            ColorRGB fill_col, ColorRGB empty_col,
                            ColorRGB text_col) {
-  if (width < 12 || height < 1)
+  if (container_w < 12 || height < 1)
     return;
   if (pct < 0.0f)
     pct = 0.0f;
   if (pct > 100.0f)
     pct = 100.0f;
 
-  const int label_w = 5;
+  const int label_w = 4;
   const int gap = 1;
-  int bar_w = width - label_w - gap;
+  int bar_w = container_w - label_w - gap;
+  int meter_x = x;
   if (bar_w < 5)
     return;
 
@@ -344,16 +345,29 @@ static void grid_bar_large(int x, int y, int width, int height, float pct,
   for (int row = 0; row < height; row++) {
     for (int col = 0; col < bar_w; col++) {
       bool used = col < filled;
-      grid_set(x + col, y + row, used ? "█" : "░",
+      grid_set(meter_x + col, y + row, used ? "█" : "░",
                used ? fill_col : empty_col, (ColorRGB){0, 0, 0}, false, used,
                !used);
     }
   }
 
   char pct_buf[8];
-  snprintf(pct_buf, sizeof(pct_buf), "%4.0f%%", pct);
-  grid_print(x + bar_w + gap, y + (height - 1) / 2, label_w, pct_buf, text_col,
-             true, false);
+  snprintf(pct_buf, sizeof(pct_buf), "%3.0f%%", pct);
+  grid_print(meter_x + bar_w + gap, y + (height - 1) / 2, label_w, pct_buf,
+             text_col, true, false);
+}
+
+// Slim one-row percentage meter for compact panels, using full panel width.
+static void grid_bar_wide(int x, int y, int container_w, float pct,
+                          ColorRGB fill_col, ColorRGB empty_col,
+                          ColorRGB text_col) {
+  if (container_w < 12)
+    return;
+  int bar_w = container_w - 5; // leave room for grid_bar's label and gap
+  int meter_x = x;
+  if (bar_w < 6)
+    return;
+  grid_bar(meter_x, y, bar_w, pct, fill_col, empty_col, text_col);
 }
 
 static void format_bytes(uint64_t bytes, char *out, size_t max) {
@@ -816,12 +830,12 @@ static void draw_cpu_card(int x, int y, int w, int h,
 
   int cur_y = y + 1;
   if (h >= 6) {
-    grid_bar_large(x + 2, cur_y, w - 4, 1, telem->cpu_total_pct,
+    grid_bar_large(x + 1, cur_y, w - 2, 1, telem->cpu_total_pct,
                    t->cpu_color, t->dim, t->text);
     cur_y += 1;
   } else {
-    grid_bar(x + 2, cur_y, w - 10, telem->cpu_total_pct, t->cpu_color, t->dim,
-             t->text);
+    grid_bar_wide(x + 1, cur_y, w - 2, telem->cpu_total_pct, t->cpu_color,
+                  t->dim, t->text);
     cur_y++;
   }
 
@@ -866,12 +880,12 @@ static void draw_gpu_card(int x, int y, int w, int h,
 
   int cur_y = y + 1;
   if (h >= 6) {
-    grid_bar_large(x + 2, cur_y, w - 4, 1, telem->gpu_device_pct,
+    grid_bar_large(x + 1, cur_y, w - 2, 1, telem->gpu_device_pct,
                    t->gpu_color, t->dim, t->text);
     cur_y += 1;
   } else {
-    grid_bar(x + 2, cur_y, w - 10, telem->gpu_device_pct, t->gpu_color, t->dim,
-             t->text);
+    grid_bar_wide(x + 1, cur_y, w - 2, telem->gpu_device_pct, t->gpu_color,
+                  t->dim, t->text);
     cur_y++;
   }
 
@@ -920,12 +934,12 @@ static void draw_mem_card(int x, int y, int w, int h,
 
   int cur_y = y + 1;
   if (h >= 6) {
-    grid_bar_large(x + 2, cur_y, w - 4, 1, telem->mem_used_pct,
+    grid_bar_large(x + 1, cur_y, w - 2, 1, telem->mem_used_pct,
                    t->mem_color, t->dim, t->text);
     cur_y += 1;
   } else {
-    grid_bar(x + 2, cur_y, w - 10, telem->mem_used_pct, t->mem_color, t->dim,
-             t->text);
+    grid_bar_wide(x + 1, cur_y, w - 2, telem->mem_used_pct, t->mem_color,
+                  t->dim, t->text);
     cur_y++;
   }
 
@@ -1373,8 +1387,8 @@ static void render_compact_view(UIState *state, const SystemTelemetry *telem,
       snprintf(c_extra, sizeof(c_extra), "%.1f°C", telem->cpu_temp_avg);
     grid_box(0, 1, col_w, card_h, "CPU MONITOR", c_extra, t->border,
              t->cpu_color, t->title);
-    grid_bar(2, 2, col_w - 10, telem->cpu_total_pct, t->cpu_color, t->dim,
-             t->text);
+    grid_bar_wide(1, 2, col_w - 2, telem->cpu_total_pct, t->cpu_color, t->dim,
+                  t->text);
     char c_sub[64];
     snprintf(c_sub, sizeof(c_sub), "Load: %.2f • U:%2.0f%% S:%2.0f%%",
              telem->load_avg[0], telem->cpu_user_pct, telem->cpu_sys_pct);
@@ -1386,8 +1400,8 @@ static void render_compact_view(UIState *state, const SystemTelemetry *telem,
       snprintf(g_extra, sizeof(g_extra), "%.1f°C", telem->gpu_temp_avg);
     grid_box(col_w, 1, col_w, card_h, "GPU & VRAM", g_extra, t->border,
              t->gpu_color, t->title);
-    grid_bar(col_w + 2, 2, col_w - 10, telem->gpu_device_pct, t->gpu_color,
-             t->dim, t->text);
+    grid_bar_wide(col_w + 1, 2, col_w - 2, telem->gpu_device_pct,
+                  t->gpu_color, t->dim, t->text);
     char g_sub[64], in_v[32];
     format_bytes(telem->gpu_in_use_bytes, in_v, sizeof(in_v));
     snprintf(g_sub, sizeof(g_sub), "Ren: %2.0f%% Til: %2.0f%% • %s",
@@ -1400,8 +1414,8 @@ static void render_compact_view(UIState *state, const SystemTelemetry *telem,
     snprintf(m_extra, sizeof(m_extra), "%s", u_mem);
     grid_box(col_w * 2, 1, col_w, card_h, "UNIFIED MEMORY", m_extra, t->border,
              t->mem_color, t->title);
-    grid_bar(col_w * 2 + 2, 2, col_w - 10, telem->mem_used_pct, t->mem_color,
-             t->dim, t->text);
+    grid_bar_wide(col_w * 2 + 1, 2, col_w - 2, telem->mem_used_pct,
+                  t->mem_color, t->dim, t->text);
     char m_sub[64], f_mem[32];
     format_bytes(telem->mem_free_bytes, f_mem, sizeof(f_mem));
     snprintf(m_sub, sizeof(m_sub), "Free: %s • Swap: %s", f_mem,
@@ -1620,7 +1634,7 @@ static void render_cpu_view(UIState *state, const SystemTelemetry *telem,
   grid_box(0, 1, left_w, top_h, "CPU OVERVIEW & LOAD", c_extra, t->border,
            t->cpu_color, t->title);
 
-  grid_bar_large(2, 2, left_w - 4, 1, telem->cpu_total_pct, t->cpu_color,
+  grid_bar_large(1, 2, left_w - 2, 1, telem->cpu_total_pct, t->cpu_color,
                  t->dim, t->text);
 
   char l1[128], l2[128], l3[128], l4[128], l5[128], l6[128];
@@ -1734,7 +1748,7 @@ static void render_gpu_view(UIState *state, const SystemTelemetry *telem,
   grid_box(0, 1, left_w, top_h, "GPU ENGINE & HARDWARE", g_extra, t->border,
            t->gpu_color, t->title);
 
-  grid_bar_large(2, 2, left_w - 4, 1, telem->gpu_device_pct, t->gpu_color,
+  grid_bar_large(1, 2, left_w - 2, 1, telem->gpu_device_pct, t->gpu_color,
                  t->dim, t->text);
 
   char gl1[128], gl2[128], gl3[128], gl4[128], gl5[128], gl6[128];
@@ -1777,7 +1791,7 @@ static void render_gpu_view(UIState *state, const SystemTelemetry *telem,
                        ? ((float)telem->gpu_in_use_bytes /
                           (float)telem->gpu_alloc_bytes * 100.0f)
                        : 0.0f;
-  grid_bar_large(left_w + 2, 2, right_w - 4, 1, vram_pct, t->accent, t->dim,
+  grid_bar_large(left_w + 1, 2, right_w - 2, 1, vram_pct, t->accent, t->dim,
                  t->text);
 
   char vl1[128], vl2[128], vl3[128], vl4[128], vl5[128], vl6[128];
@@ -1847,7 +1861,7 @@ static void render_mem_view(UIState *state, const SystemTelemetry *telem,
 
   grid_box(0, 1, left_w, top_h, "UNIFIED MEMORY STATUS", u_str, t->border,
            t->mem_color, t->title);
-  grid_bar_large(2, 2, left_w - 4, 1, telem->mem_used_pct, t->mem_color,
+  grid_bar_large(1, 2, left_w - 2, 1, telem->mem_used_pct, t->mem_color,
                  t->dim, t->text);
 
   char ml1[128], ml2[128], ml3[128], ml4[128];
@@ -2018,7 +2032,7 @@ static void render_net_view(UIState *state, const SystemTelemetry *telem,
   grid_print(left_w + 2, 3, right_w - 4, dl2, t->accent2, true, false);
   grid_print(left_w + 2, 4, right_w - 4, dl3, t->dim, false, false);
   grid_print(left_w + 2, 5, right_w - 4, dl4, t->text, true, false);
-  grid_bar_large(left_w + 2, 6, right_w - 4, 1, disk_pct, t->accent, t->dim,
+  grid_bar_large(left_w + 1, 6, right_w - 2, 1, disk_pct, t->accent, t->dim,
                  t->text);
   grid_print(left_w + 2, 7, right_w - 4, dl5, t->dim, false, false);
 

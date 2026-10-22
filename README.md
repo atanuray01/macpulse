@@ -64,7 +64,7 @@ MacPulse offers **10 specialized full-screen dashboard layout presets** to suit 
 ```
 ◈ MacPulse • Apple M4 • 10 Cores (6E+4P) • 8 GPU • v1.0.0            ⚡ 89% • Nominal • Up: 4d 2h • 16:50:00
 ┌─ CPU MONITOR • 34.0°C ─────┐┌─ GPU & VRAM ───────────────┐┌─ UNIFIED MEMORY ───────────┐┌─ NETWORK SPEED ────────────┐
-│ █████░░░░░░░░░░░░░  18%  ││ ██░░░░░░░░░░░░░░░░ 12%  ││ ███████████░░░░░░░ 53% ││ Download: ▼  3.42 MB/s     │
+│████░░░░░░░░░░░░░░░░░░░  18%││██░░░░░░░░░░░░░░░░░░░░░  12%││████████████░░░░░░░░░░░  53%││ Download: ▼  3.42 MB/s     │
 │ User: 12%  Sys:  6%        ││ Renderer: 12%  Tiler:  4%  ││ App: 5.2GB  Wired: 1.8GB   ││ Upload:   ▲ 480.2 KB/s     │
 │ Load: 1.64 1.52 1.48       ││ VRAM: 335.3MB / 1.3GB      ││ Comp: 1.6GB  Cache: 5.0GB  ││ In: 14.2GB  Out: 2.4GB     │
 │ 10 Cores (6E + 4P)         ││ 8 GPU Cores • Metal 3      ││ Free: 1.9GB  Swap: 0B      ││ Disk IO: R 16KB/s W 4KB/s   │
@@ -110,7 +110,7 @@ MacPulse offers **10 specialized full-screen dashboard layout presets** to suit 
 8. **Network & Disk (`net`)**:
    I/O throughput center displaying real-time download/upload gauges, cumulative session traffic, disk read/write bandwidth, dual-series network speed history graph, and I/O-active processes.
 9. **Bento Grid (`bento`)**:
-   A two-row metric-card grid with wide single-row CPU, GPU, and memory meters; history graphs and the process table sit side-by-side below a custom two-line status header.
+   A two-row metric-card grid with centered CPU, GPU, and memory bars using the full available panel width; history graphs and the process table sit side-by-side below a custom two-line status header.
 10. **Metrics Rail (`rail`)**:
     A vertical CPU/GPU/memory/network meter rail beside a separate graph-and-process workspace, reflowing the dashboard into a sidebar composition.
 
@@ -139,7 +139,7 @@ MacPulse supports both Apple Silicon unified graphics and separate/discrete GPUs
 
 MacPulse includes **15 handcrafted 24-bit Truecolor RGB themes** (default: **Matrix Hacker**). Switch themes live inside the app using **`t`** (modal picker) or **`T`** (instant cycle).
 
-All built-in and JSON themes color the wide single-row block meters with their CPU, GPU, memory, disk, and muted colors. Compact mode keeps slimmer one-row meters for density.
+All built-in and JSON themes color full-width single-row block meters, with the percentage label at the end of each panel's available meter row. Compact mode keeps one-row meters.
 
 | # | Theme Name | Description |
 | :---: | :--- | :--- |
